@@ -62,11 +62,13 @@ Jessnix Browser/
 - [ ] Write `scripts/build.ps1`: fetch → apply patches → build → package
 
 ### Phase 1: Rebrand (goal: it says Jessnix everywhere)
-- [ ] Product name, company name, executable `jessnix.exe`
-- [ ] App icon from `branding/jessnix.ico`, PNG sizes into Chromium's theme resources
-- [ ] Own user-data folder (`%LOCALAPPDATA%\Jessnix`) so it never collides with Chrome
+- [x] Product name and company name (`patches/jessnix/product-name.patch`)
+- [x] Name in all UI text and all 81 translations (`scripts/jessnix_apply.py`)
+- [ ] Executable `jessnix.exe` (still `chrome.exe`: the name is wired into the installer, updater and packaging, so it gets its own patch later)
+- [x] App icon from `branding/jessnix.ico`, PNG sizes into Chromium's theme resources (`branding/assets.txt`)
+- [x] Own user-data folder (`%LOCALAPPDATA%\Jessnix`), own Windows IDs, never collides with Chrome or Chromium (`patches/jessnix/install-identity.patch`)
 - [ ] About page and `chrome://version` show Jessnix name + version
-- [ ] Windows installer + portable ZIP
+- [x] Windows installer + portable ZIP, named `Jessnix_<version>_...` in `dist/`
 
 ### Phase 2: Privacy defaults (the LibreWolf layer)
 Most of this comes free from ungoogled-chromium. The checklist makes sure nothing is missed:

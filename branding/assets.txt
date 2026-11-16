@@ -1,0 +1,16 @@
+# Image files copied over Chromium's own, after the patches in patches/series.
+# Patches cannot carry images, so this list is the one place they are swapped.
+# <file in this repo>                <path in the Chromium source tree>
+branding/jessnix.ico                 chrome/app/theme/chromium/win/chromium.ico
+branding/png/icon_16.png             chrome/app/theme/chromium/product_logo_16.png
+branding/png/icon_24.png             chrome/app/theme/chromium/product_logo_24.png
+branding/png/icon_48.png             chrome/app/theme/chromium/product_logo_48.png
+branding/png/icon_64.png             chrome/app/theme/chromium/product_logo_64.png
+branding/png/icon_128.png            chrome/app/theme/chromium/product_logo_128.png
+branding/png/icon_256.png            chrome/app/theme/chromium/product_logo_256.png
+branding/png/icon_16.png             chrome/app/theme/default_100_percent/chromium/product_logo_16.png
+branding/png/icon_32.png             chrome/app/theme/default_100_percent/chromium/product_logo_32.png
+branding/png/icon_32.png             chrome/app/theme/default_200_percent/chromium/product_logo_16.png
+branding/png/icon_64.png             chrome/app/theme/default_200_percent/chromium/product_logo_32.png
+branding/win/tiles/Logo.png          chrome/app/theme/chromium/win/tiles/Logo.png
+branding/win/tiles/SmallLogo.png     chrome/app/theme/chromium/win/tiles/SmallLogo.png
