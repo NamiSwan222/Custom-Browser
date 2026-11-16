@@ -1,0 +1,9 @@
+# Chromium source and build output live outside the repo or here, never committed
+/build/
+/src/
+/out/
+/download_cache/
+*.7z
+*.zip
+*.exe
+!branding/**
