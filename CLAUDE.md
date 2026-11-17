@@ -1,8 +1,9 @@
 # Jessnix Browser
 
-Chromium-based browser built as a patch set on ungoogled-chromium. Roadmap: `PLAN.md`.
+Firefox-based browser, a fork of Zen Browser. Roadmap: `PLAN.md`. Where the Zen code came from and how to take newer Zen releases: `docs/jessnix/UPSTREAM.md`.
 
-- Never edit Chromium source directly; every change is a patch in `patches/`, listed in `patches/series`.
-  Two things patches can't carry well are done by `scripts/jessnix_apply.py` instead: images (listed in `branding/assets.txt`) and the product-name rename across the strings files and their translations.
-- One feature per patch, so moving to a new Chromium version stays cheap.
+- Never edit `engine/` (the downloaded Firefox source) directly: changes go in `src/` (files copied in, or `.patch` files) and `prefs/`, which surfer applies. `npm run export` turns an `engine/` edit into a patch.
+- Keep Jessnix changes in their own files where possible (`src/zen/jessnix/`, `prefs/jessnix/`), so taking a newer Zen release rarely conflicts.
+- Run build steps through `scripts/jessnix.ps1` on Windows: it sets up PATH for surfer and logs to `.logs/`.
+- The repo path must not contain spaces (Firefox's build refuses).
 - UI work (new tab page, theme, settings, panels) follows anti-slop. Direction comes from `DESIGN.md`, written by the owner. If it doesn't exist yet, ask before building UI.

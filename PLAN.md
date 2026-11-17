@@ -1,20 +1,21 @@
 # Jessnix Browser: Build Plan
 
-A fast, private, Chromium-based browser for daily use, with features that are mine.
+A fast, private browser for daily use, with features that are mine.
 
-The model is **LibreWolf, but for Chromium**: LibreWolf does not rewrite Firefox. It takes upstream Firefox, removes telemetry, applies privacy settings and patches, bundles uBlock Origin, and rebrands it. Jessnix does the same on top of Chromium, starting from [ungoogled-chromium](https://github.com/ungoogled-software/ungoogled-chromium), which already strips Google services and background requests.
+Jessnix is a **fork of [Zen Browser](https://github.com/zen-browser/desktop)**, which is built on Firefox. Zen already has vertical tabs, workspaces, split view and compact mode. Jessnix adds its own name and look, LibreWolf-style privacy defaults, and its own features on top.
 
 ---
 
 ## 1. Base decision
 
-| Option | What it is | Verdict |
-|---|---|---|
-| **Patch set on ungoogled-chromium** | Keep Chromium source untouched, apply our own patches + branding + default prefs at build time | **Chosen.** Real Chromium speed, real Chrome extensions, and moving to a new Chromium version means re-applying a patch folder, not merging a fork |
-| Full Chromium fork | Edit Chromium directly | Every 4-week Chromium release becomes a painful merge. Not maintainable alone |
-| Electron / CEF wrapper | A web app that hosts a Chromium view | Fast to prototype, but slower, weak extension support, and not a real browser. Rejected |
+| Option | Verdict |
+|---|---|
+| **Fork of Zen (Firefox)** | **Chosen.** Firefox's whole interface (tab strip, toolbar, menus, sidebars) is HTML/JS/CSS, so changing it rebuilds in seconds (`scripts/jessnix.ps1 ui`) instead of a C++ compile. Zen's vertical tabs, spaces and split view come for free |
+| Patch set on ungoogled-chromium | Tried first (tag `chromium-archive`). The interface is C++: every UI change meant a compile, and patches break on every 4-week Chromium release |
+| Own project on plain Firefox (surfer) | Same build speed as the Zen fork, but vertical tabs, spaces and split view would all have to be built from scratch |
+| Ladybird / Servo / Electron | Too early for daily use, or not a real browser |
 
-The same approach powers Helium, Thorium, Cromite and Brave's patch layer, so there's plenty of prior work to learn from.
+How Zen is built: [surfer](https://github.com/zen-browser/surfer) downloads Firefox's source into `engine/`, applies the `.patch` files and copies the files under `src/`, then runs Firefox's build (`mach`). Where Jessnix came from in Zen is recorded in [docs/jessnix/UPSTREAM.md](docs/jessnix/UPSTREAM.md).
 
 ---
 
@@ -22,120 +23,104 @@ The same approach powers Helium, Thorium, Cromite and Brave's patch layer, so th
 
 | Need | Detail |
 |---|---|
-| Windows 10/11 x64 | Building on Windows produces Windows builds |
-| Visual Studio 2022 | "Desktop development with C++" workload + the Windows SDK version Chromium's docs list |
-| Disk | ~100 GB free on a fast SSD for source + build output |
-| RAM | 32 GB recommended (16 GB works, slowly) |
-| Python 3, Git, depot_tools | Chromium's build tooling |
-| Time | First full build takes several hours. Later incremental builds take minutes |
+| Windows 10/11 x64 | |
+| A path with no spaces | Firefox refuses to build otherwise (the repo is `D:\AIStuff\Jessnix-Browser`) |
+| MozillaBuild | `C:\mozilla-build`, Mozilla's build shell and tools |
+| Git for Windows, Node.js 21+, Python 3, Rust | surfer and Firefox's build use them |
+| sccache, 7-Zip | build cache, packaging |
+| Disk | ~40 GB for Firefox source + build |
 
-Repos to clone next to this one:
-- `ungoogled-chromium`: the core patches and domain substitution
-- `ungoogled-chromium-windows`: the Windows build scripts that this project's `scripts/` will wrap
+Everything runs through `scripts/jessnix.ps1 <step>`, which sets up the environment and logs to `.logs/`.
 
 ---
 
 ## 3. Repo layout
 
 ```
-Jessnix Browser/
-├── PLAN.md                  this file
-├── README.md
-├── branding/                icons (.ico + PNG sizes); later: wordmark, installer art
-├── patches/                 Jessnix patches, applied after ungoogled-chromium's
-│   └── series               order the patches apply in
-├── config/
-│   ├── flags.gn             build flags (official release build)
-│   ├── initial_preferences  first-run defaults (search engine, homepage, privacy)
-│   └── policies/            managed policies
-├── scripts/                 fetch → patch → build → package
-└── docs/                    one note per feature + how to move to a new Chromium
+Jessnix-Browser/
+├── PLAN.md, README.md, CLAUDE.md
+├── surfer.json        name, version, brands (what surfer builds)
+├── src/               files copied into Firefox, and *.patch files applied to it
+│   └── zen/           Zen's own features (spaces, split-view, compact-mode, ...)
+├── prefs/             default preferences (firefox/, zen/, privatefox/, fastfox/)
+├── configs/           build config and branding (configs/branding/<brand>/)
+├── branding/          Jessnix's original icon files
+├── scripts/           jessnix.ps1 (Windows wrapper) + Zen's scripts
+├── docs/jessnix/      Jessnix notes: upstream, features
+└── engine/            Firefox source, downloaded by `init` (not in git)
 ```
 
 ---
 
 ## 4. Phases
 
-### Phase 0: First build (goal: a plain ungoogled-chromium I built myself)
-- [ ] Install the toolchain (section 2)
-- [ ] Build stock `ungoogled-chromium-windows` once, unchanged. Proves the machine works before any of my changes can break it
-- [ ] Write `scripts/build.ps1`: fetch → apply patches → build → package
+### Phase 0: First build (goal: plain Zen, built on my machine)
+- [x] Install MozillaBuild, sccache, 7-Zip on PATH
+- [x] Import Zen 1.24.2b (Firefox 160)
+- [ ] `scripts/jessnix.ps1 init`: download Firefox and prepare it
+- [ ] `scripts/jessnix.ps1 build`, then `start`: the browser runs
 
 ### Phase 1: Rebrand (goal: it says Jessnix everywhere)
-- [x] Product name and company name (`patches/jessnix/product-name.patch`)
-- [x] Name in all UI text and all 81 translations (`scripts/jessnix_apply.py`)
-- [ ] Executable `jessnix.exe` (still `chrome.exe`: the name is wired into the installer, updater and packaging, so it gets its own patch later)
-- [x] App icon from `branding/jessnix.ico`, PNG sizes into Chromium's theme resources (`branding/assets.txt`)
-- [x] Own user-data folder (`%LOCALAPPDATA%\Jessnix`), own Windows IDs, never collides with Chrome or Chromium (`patches/jessnix/install-identity.patch`)
-- [ ] About page and `chrome://version` show Jessnix name + version
-- [x] Windows installer + portable ZIP, named `Jessnix_<version>_...` in `dist/`
+- [ ] `surfer.json`: name, vendor, app ID and binary `jessnix.exe`, brand names, own GitHub repo
+- [ ] Icons from `branding/` into `configs/branding/release/` (app, installer, tiles, private-browsing icon)
+- [ ] **Updates point away from Zen's server** (`updateHostname`), or Zen's updater would replace Jessnix with Zen
+- [ ] Zen links (website, welcome page, support, crash reports) point to Jessnix or are removed
+- [ ] Own profile folder, so it never shares data with Zen or Firefox
+- [ ] Windows installer
 
 ### Phase 2: Privacy defaults (the LibreWolf layer)
-Most of this comes free from ungoogled-chromium. The checklist makes sure nothing is missed:
-- [ ] No telemetry, crash reporting, usage stats, or Google service pings
+Zen already turns off most Mozilla telemetry. On top, in `prefs/`:
+- [ ] Telemetry, studies, crash reporting and usage pings all off (verify Zen's list against LibreWolf's)
 - [ ] Default search: DuckDuckGo (switchable to Startpage, Brave Search, SearXNG, Google)
-- [ ] Third-party cookies blocked; HTTPS-Only mode on
-- [ ] WebRTC IP-leak protection on
-- [ ] Cross-site referrers trimmed
-- [ ] Fingerprinting reductions (ungoogled-chromium's fingerprinting flags)
+- [ ] Enhanced Tracking Protection: strict; HTTPS-Only mode on
+- [ ] WebRTC IP-leak protection, trimmed cross-site referrers
+- [ ] Fingerprinting protection (Firefox's fingerprinting protection, without the site breakage of full resistFingerprinting)
 - [ ] Optional: clear cookies/history on exit, with a per-site keep list
-- [ ] No Google sign-in; Google sync off (own sync in Phase 5)
 
 ### Phase 3: Speed and daily-use basics
-- [ ] Official release build flags: `is_official_build`, ThinLTO, PGO, `symbol_level=0`
-- [ ] CPU-targeted build option (AVX2), like Thorium, for a few percent more speed
-- [ ] **Bundled uBlock Origin.** Ad blocking is the biggest speed win on real sites. Chrome removed Manifest V2, so this needs either patches that keep MV2 working (as ungoogled-chromium/Helium do) or uBlock Origin Lite as fallback. Check the current state when building
-- [ ] Chrome Web Store installs working (ungoogled-chromium needs a small helper for this)
-- [ ] Memory Saver / tab sleeping on by default, configurable timeout
-- [ ] Hardware video decode and GPU rasterization confirmed on
-- [ ] Password manager, autofill, PDF viewer, downloads, bookmark import from Chrome/Edge/Firefox. These come with Chromium; verify they still work after de-Googling
-- [ ] Update check: look at GitHub Releases on startup and offer the new version (no background service)
+- [ ] **Bundled uBlock Origin** (Firefox still supports the full version), as LibreWolf does
+- [ ] Hebrew language pack and spellcheck included
+- [ ] Tab unloading on, hardware video decode confirmed
+- [ ] Bookmark/password import from Chrome/Edge works
+- [ ] Updates: own update feed from GitHub Releases
+- [ ] Sync: decide between Firefox Sync (Mozilla account) and none
 
 ### Phase 4: Jessnix features (what makes it mine)
-Build and ship one at a time. Each gets a note in `docs/`.
+Each feature lives in `src/zen/jessnix/` (or its own folder) and gets a note in `docs/jessnix/`.
 
-| Feature | What it does | Effort |
-|---|---|---|
-| **Jessnix new tab page** | Fast local page: mascot, clock, search, shortcut tiles. No feeds, no ads, no network requests | Low |
-| **Mascot theme** | Purple theme drawn from the icon, light + dark | Low |
-| **Command palette** (Ctrl+K) | Search tabs, history, bookmarks, settings and actions from one box | Medium |
-| **Vertical tabs + spaces** | Side tab strip; save/restore a set of tabs as a "space" (Gamedev, Hebrew projects, Daily…) | Medium–High |
-| **Split view** | Two tabs side by side in one window | Medium (Chromium has an upstream base) |
-| **Game mode** | One toggle: sleep background tabs, throttle hidden tabs, pause media, free RAM while a game runs | Medium |
-| **Hebrew / RTL helpers** | Hebrew spellcheck preinstalled, quick RTL/LTR toggle for text fields | Low |
-| **Throwaway site profiles** | Open a site in a temporary profile that's wiped on close | High |
-| **Screenshot + notes panel** | Full-page screenshot and a scratchpad side panel | Medium |
+| Feature | Status |
+|---|---|
+| Vertical tabs, spaces (Zen "workspaces") | Comes with Zen |
+| Split view | Comes with Zen |
+| Compact mode, mods/themes store | Comes with Zen |
+| **Jessnix new tab page**: mascot, clock, search, shortcut tiles, no network requests | To build (Low) |
+| **Mascot theme**: purple, from the icon, light + dark | To build (Low) |
+| **Command palette** (Ctrl+K): tabs, history, bookmarks, settings, actions | To build (Medium) |
+| **Game mode**: one toggle to unload background tabs, pause media, free RAM | To build (Medium) |
+| **Hebrew / RTL helpers**: quick RTL/LTR toggle for text fields | To build (Low) |
+| **Throwaway site profiles**: open a site in a temporary container, wiped on close | To build (Medium, Firefox containers help) |
+| **Screenshot + notes panel** | To build (Medium, Firefox has screenshots) |
 
-Start with the new tab page and theme: visible right away, and they don't touch Chromium internals.
+Start with the new tab page and theme.
 
 ### Phase 5: Later
-- [ ] Own sync (bookmarks, settings) through a folder I choose or a small server
 - [ ] Linux build
-- [ ] Release automation (Chromium is too big for free GitHub runners, so a self-hosted runner on my PC)
+- [ ] Release automation on a self-hosted runner (my PC)
 
 ---
 
 ## 5. Rules for UI work
 
-Every Jessnix UI surface (new tab page, settings pages, theme, side panels) goes through **anti-slop** ([miqdadbadjuber/anti-slop](https://github.com/miqdadbadjuber/anti-slop)):
+Every Jessnix UI surface (new tab page, theme, panels, settings) goes through **anti-slop** ([miqdadbadjuber/anti-slop](https://github.com/miqdadbadjuber/anti-slop)):
 1. Install it in this repo by running `npx antislop-ai` myself
 2. Before any UI is built, I write `DESIGN.md`: identity, personality, palette, typography, mood. anti-slop is a filter, not a source of taste, so the direction has to come from me
 3. Every visual choice has a written reason. If a screen would look the same with the Jessnix name swapped out, it gets redone
 
 ---
 
-## 6. Keeping up with Chromium
+## 6. Keeping up with Zen and Firefox
 
-Chromium ships a new stable version every 4 weeks, with security fixes in between. A daily-use browser has to follow:
-- Track the ungoogled-chromium release tag for each new Chromium version
-- Re-apply `patches/`, fix any that fail, rebuild, release
-- Keep patches small, one feature per file, so updates stay cheap
-- Never run a build more than one stable version behind: old Chromium means known security holes
-
----
-
-## 7. Next steps
-
-1. Install the toolchain and do the Phase 0 stock build
-2. Write `DESIGN.md` (how Jessnix should look and feel)
-3. Phase 1 rebrand, then the first test build
+Firefox ships a new version every 4 weeks, with security fixes in between, and Zen follows within days. A daily-use browser has to follow:
+- Take each new Zen release with the steps in [docs/jessnix/UPSTREAM.md](docs/jessnix/UPSTREAM.md)
+- Keep Jessnix changes in their own files where possible (`src/zen/jessnix/`, `prefs/jessnix/`), so Zen updates rarely conflict
+- Never ship more than one Firefox version behind: old engines mean known security holes
