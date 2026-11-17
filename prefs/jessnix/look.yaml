@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 NamiSwan222. See LICENSE-MIT.
+
+# Jessnix layout choices (Settings > Look and Feel > Personalize > Layout),
+# applied by src/zen/jessnix/jessnix-look.css.
+
+# 0 compact (Zen's own), 1 comfortable, 2 large.
+- name: jessnix.look.size
+  value: 1
+
+# 0 square, 1 rounded (Zen's own), 2 extra round.
+- name: jessnix.look.roundness
+  value: 1
+
+# Names beside the sidebar's Library and Create New buttons.
+- name: jessnix.look.button-labels
+  value: true
+
+# How strongly a chosen background image shows (30 subtle, 60 balanced, 90 strong).
+- name: jessnix.personalize.background-strength
+  value: 60

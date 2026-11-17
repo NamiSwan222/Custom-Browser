@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 NamiSwan222. See LICENSE-MIT.
 """Downloads the pinned uBlock Origin release for bundling with Jessnix.
 
 The .xpi goes to src/browser/app/distribution/extensions/, which surfer copies into

@@ -1,0 +1,88 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 NamiSwan222. See LICENSE-MIT. */
+
+/* Jessnix: Settings > Look and Feel > Personalize > Layout.
+ * Every choice is a pref, so each person sets their own and the change shows
+ * at once in every window. Size 0 and roundness 1 leave Zen's look untouched. */
+
+/* Size. Zen's sidebar is dense (14px text, 28px buttons); Jessnix starts at
+ * Comfortable so tabs and buttons are easier to read and to hit. */
+@media -moz-pref("jessnix.look.size", 1) {
+  #navigator-toolbox {
+    --tab-min-height: 40px;
+    --jessnix-button-padding: 8px;
+  }
+  #navigator-toolbox #tabbrowser-tabs {
+    font-size: 15px;
+  }
+}
+
+@media -moz-pref("jessnix.look.size", 2) {
+  #navigator-toolbox {
+    --tab-min-height: 46px;
+    --jessnix-button-padding: 10px;
+  }
+  #navigator-toolbox #tabbrowser-tabs {
+    font-size: 16.5px;
+  }
+  #urlbar {
+    font-size: 16px;
+  }
+}
+
+/* Zen draws its sidebar buttons at a fixed 6px around a 16px icon; the bigger
+ * sizes widen that, so the buttons are easier to hit. */
+@media not -moz-pref("jessnix.look.size", 0) {
+  #navigator-toolbox :is(#zen-sidebar-top-buttons, #zen-sidebar-foot-buttons) .toolbarbutton-1 > .toolbarbutton-icon {
+    padding: var(--jessnix-button-padding) !important;
+    width: calc(16px + 2 * var(--jessnix-button-padding)) !important;
+    height: calc(16px + 2 * var(--jessnix-button-padding)) !important;
+  }
+}
+
+/* Roundness: 0 squarer, 1 Zen's own, 2 rounder. Zen sets these radii on the
+ * sidebar and on each button, so they are overridden there. */
+@media -moz-pref("jessnix.look.roundness", 0) {
+  :root {
+    --zen-border-radius: 4px;
+  }
+  :root #navigator-toolbox,
+  :root #navigator-toolbox .toolbarbutton-1 {
+    --border-radius-medium: 6px;
+    --tab-border-radius: 4px;
+  }
+}
+
+@media -moz-pref("jessnix.look.roundness", 2) {
+  :root {
+    --zen-border-radius: 14px;
+  }
+  :root #navigator-toolbox,
+  :root #navigator-toolbox .toolbarbutton-1 {
+    --border-radius-medium: 22px;
+    --tab-border-radius: 14px;
+  }
+}
+
+/* Button labels: the sidebar's bottom buttons show their names beside the icon,
+ * so their job is readable without hovering. */
+@media -moz-pref("jessnix.look.button-labels") {
+  #zen-sidebar-foot-buttons > :is(#zen-library-button, #zen-create-new-button) {
+    width: auto !important;
+    & > .toolbarbutton-text {
+      display: flex !important;
+      align-items: center;
+      padding: 0 6px 0 2px !important;
+    }
+  }
+  /* Zen's main menu button is three dots, which reads as "more" rather than
+   * as the menu; with names on, it gets the familiar three-line menu icon. */
+  #PanelUI-menu-button {
+    list-style-image: url("chrome://browser/skin/menu.svg") !important;
+  }
+  /* Zen draws the Library icon as a 20px sprite centred over the whole button;
+   * keep it centred over the icon's own spot, so the label sits beside it. */
+  #zen-library-button .zen-library-sprite {
+    inset-inline-start: calc(var(--jessnix-button-padding, 6px) - 2px) !important;
+  }
+}

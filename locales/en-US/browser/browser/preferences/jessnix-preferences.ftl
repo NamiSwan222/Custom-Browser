@@ -1,10 +1,49 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 NamiSwan222. See LICENSE-MIT.
 
 # Settings > Look and Feel > Personalize
 
 jessnix-personalize-title = Personalize
+
+jessnix-look-header = Layout
+jessnix-look-description = How big and how round things are, and where they sit. Changes show at once.
+jessnix-look-size = Size
+jessnix-look-size-compact =
+    .label = Compact
+jessnix-look-size-comfortable =
+    .label = Comfortable
+jessnix-look-size-large =
+    .label = Large
+jessnix-look-roundness = Corners
+jessnix-look-roundness-square =
+    .label = Square
+jessnix-look-roundness-rounded =
+    .label = Rounded
+jessnix-look-roundness-round =
+    .label = Extra round
+jessnix-look-scheme = Light or dark
+jessnix-look-scheme-auto =
+    .label = Follow Windows
+jessnix-look-scheme-light =
+    .label = Light
+jessnix-look-scheme-dark =
+    .label = Dark
+jessnix-look-side = Tabs sidebar
+jessnix-look-side-left =
+    .label = On the left
+jessnix-look-side-right =
+    .label = On the right
+jessnix-look-bookmarks = Bookmarks bar
+jessnix-look-bookmarks-always =
+    .label = Always show
+jessnix-look-bookmarks-newtab =
+    .label = Only on new tabs
+jessnix-look-bookmarks-never =
+    .label = Never show
+jessnix-look-labels =
+    .label = Show names next to the Library and Create New buttons
+jessnix-look-window-buttons =
+    .label = Always show the minimize, maximize and close buttons
 
 jessnix-personalize-name-header = Browser name
 jessnix-personalize-name-description = The name shown in the window title and on the taskbar. Leave it empty to use { -brand-short-name }.

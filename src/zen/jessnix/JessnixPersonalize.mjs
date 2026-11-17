@@ -1,6 +1,5 @@
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 NamiSwan222. See LICENSE-MIT.
 
 // Jessnix personalization, applied to each browser window: the browser's name
 // in the window title, its window icon, and a background image behind the tabs
@@ -12,7 +11,12 @@ const PREF_NAME = "jessnix.personalize.name";
 const PREF_ICON = "jessnix.personalize.icon";
 const PREF_BACKGROUND = "jessnix.personalize.background";
 const PREF_BACKGROUND_STRENGTH = "jessnix.personalize.background-strength";
-const PREFS = [PREF_NAME, PREF_ICON, PREF_BACKGROUND, PREF_BACKGROUND_STRENGTH];
+const PREF_SIZE = "jessnix.look.size";
+const PREFS = [PREF_NAME, PREF_ICON, PREF_BACKGROUND, PREF_BACKGROUND_STRENGTH, PREF_SIZE];
+
+// Narrowest sidebar for each Layout size (jessnix-look.css), so the bigger text
+// still leaves room for tab names. 0 is Zen's own size, with no minimum.
+const SIDEBAR_MIN_WIDTH = { 1: 205, 2: 235 };
 
 // Largest icon size Windows asks for (taskbar and Alt+Tab at high DPI).
 const ICON_DECODE_SIZE = 256;
@@ -20,7 +24,8 @@ const ICON_DECODE_SIZE = 256;
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
-  TaskbarTabsUtils: "resource:///modules/taskbartabs/TaskbarTabsUtils.sys.mjs",
+  TaskbarTabsUtils:
+    "moz-src:///browser/components/taskbartabs/TaskbarTabsUtils.sys.mjs",
 });
 
 const MIME_BY_EXTENSION = {
@@ -62,6 +67,7 @@ class nsJessnixPersonalize {
     this.#applyName();
     this.#applyIcon();
     this.#applyBackground();
+    this.#applySidebarWidth();
   }
 
   observe(_subject, _topic, pref) {
@@ -75,6 +81,9 @@ class nsJessnixPersonalize {
       case PREF_BACKGROUND:
       case PREF_BACKGROUND_STRENGTH:
         this.#applyBackground();
+        break;
+      case PREF_SIZE:
+        this.#applySidebarWidth();
         break;
     }
   }
@@ -132,6 +141,25 @@ class nsJessnixPersonalize {
     } catch (error) {
       console.error("Jessnix: could not use the chosen icon", path, error);
     }
+  }
+
+  // Widens the sidebar to the size's minimum, the same way Zen's own resize
+  // handle does; a sidebar already wider, or dragged wider later, is left alone.
+  #applySidebarWidth() {
+    const minWidth = SIDEBAR_MIN_WIDTH[Services.prefs.getIntPref(PREF_SIZE, 0)];
+    const toolbox = document.getElementById("navigator-toolbox");
+    if (!minWidth || !toolbox?.hasAttribute("zen-sidebar-expanded")) {
+      return;
+    }
+    const width = parseFloat(toolbox.getAttribute("width") || toolbox.style.width);
+    if (width >= minWidth) {
+      return;
+    }
+    const value = `${minWidth}px`;
+    toolbox.style.width = value;
+    toolbox.style.setProperty("--zen-sidebar-width", value);
+    toolbox.setAttribute("width", value);
+    window.dispatchEvent(new Event("resize"));
   }
 
   async #applyBackground() {

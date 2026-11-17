@@ -23,7 +23,7 @@
   value: false
 
 - name: zen.view.hide-window-controls
-  value: true
+  value: false  # Jessnix: close/min/max always visible (Zen hides them until hover)
 
 - name: zen.view.experimental-no-window-controls
   value: false
