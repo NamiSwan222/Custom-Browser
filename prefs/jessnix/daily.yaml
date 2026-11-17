@@ -1,0 +1,20 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# Jessnix daily-use defaults.
+
+# Stay signed in: offer to save passwords, fill them in on return, and keep
+# cookies between sessions (nothing is cleared on close).
+- name: signon.rememberSignons
+  value: true
+
+- name: signon.autofillForms
+  value: true
+
+- name: privacy.sanitize.sanitizeOnShutdown
+  value: false
+
+# Show the bookmark star in the address bar (Zen hides it; see zen-omnibox.css).
+- name: jessnix.urlbar.show-bookmark-star
+  value: true

@@ -1,0 +1,9 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# Jessnix's own features. Included from browser/base/content/zen-assets.jar.inc.mn.
+
+        content/browser/zen-components/JessnixPersonalize.mjs                   (../../zen/jessnix/JessnixPersonalize.mjs)
+        content/browser/zen-styles/jessnix-personalize.css                      (../../zen/jessnix/jessnix-personalize.css)
+        content/browser/preferences/jessnix-settings.js                         (../../zen/jessnix/jessnix-settings.js)

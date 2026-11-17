@@ -729,9 +729,15 @@
  * them into a single, unified button */
 #reader-mode-button,
 .urlbar-go-button,
-#star-button-box,
 #pageActionButton:not([open]) {
   display: none !important;
+}
+
+/* Jessnix: the bookmark star stays, unless turned off (prefs/jessnix/daily.yaml). */
+@media not -moz-pref("jessnix.urlbar.show-bookmark-star") {
+  #star-button-box {
+    display: none !important;
+  }
 }
 
 @media not -moz-pref("zen.urlbar.show-contextual-id") {

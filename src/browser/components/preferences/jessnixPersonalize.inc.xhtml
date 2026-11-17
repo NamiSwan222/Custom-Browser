@@ -1,0 +1,62 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# Jessnix: Settings > Look and Feel > Personalize. Included at the end of the
+# paneZenLooks template in zenLooksAndFeel.inc.xhtml; the logic is in
+# jessnix-settings.js.
+
+<hbox id="jessnixPersonalizeCategory"
+      class="subcategory"
+      hidden="true"
+      data-category="paneZenLooks">
+<html:h1 data-l10n-id="jessnix-personalize-title"/>
+</hbox>
+
+<groupbox id="jessnixPersonalizeGroup" data-category="paneZenLooks" hidden="true" class="highlighting-group">
+  <label><html:h2 data-l10n-id="jessnix-personalize-name-header"/></label>
+  <description class="description-deemphasized" data-l10n-id="jessnix-personalize-name-description"/>
+  <hbox align="center">
+    <html:input id="jessnixPersonalizeName" type="text" maxlength="40"
+                data-l10n-id="jessnix-personalize-name-input"/>
+    <button id="jessnixPersonalizeNameReset" data-l10n-id="jessnix-personalize-reset"/>
+  </hbox>
+
+  <label><html:h2 data-l10n-id="jessnix-personalize-icon-header"/></label>
+  <description class="description-deemphasized" data-l10n-id="jessnix-personalize-icon-description"/>
+  <hbox align="center">
+    <html:img id="jessnixPersonalizeIconPreview" width="32" height="32" alt=""/>
+    <button id="jessnixPersonalizeIconChoose" data-l10n-id="jessnix-personalize-choose-image"/>
+    <button id="jessnixPersonalizeIconReset" data-l10n-id="jessnix-personalize-use-default"/>
+  </hbox>
+
+  <label><html:h2 data-l10n-id="jessnix-personalize-background-header"/></label>
+  <description class="description-deemphasized" data-l10n-id="jessnix-personalize-background-description"/>
+  <hbox align="center">
+    <html:img id="jessnixPersonalizeBackgroundPreview" width="96" height="54" alt="" hidden="true"/>
+    <button id="jessnixPersonalizeBackgroundChoose" data-l10n-id="jessnix-personalize-choose-image"/>
+    <button id="jessnixPersonalizeBackgroundReset" data-l10n-id="jessnix-personalize-remove-image"/>
+  </hbox>
+  <hbox align="center">
+    <label id="jessnixPersonalizeStrengthLabel" control="jessnixPersonalizeStrength"
+           data-l10n-id="jessnix-personalize-background-strength"/>
+    <menulist id="jessnixPersonalizeStrength" preference="jessnix.personalize.background-strength">
+      <menupopup>
+        <menuitem data-l10n-id="jessnix-personalize-strength-subtle" value="30"/>
+        <menuitem data-l10n-id="jessnix-personalize-strength-balanced" value="60"/>
+        <menuitem data-l10n-id="jessnix-personalize-strength-strong" value="90"/>
+      </menupopup>
+    </menulist>
+  </hbox>
+
+  <label><html:h2 data-l10n-id="jessnix-personalize-colors-header"/></label>
+  <description class="description-deemphasized" data-l10n-id="jessnix-personalize-colors-description"/>
+  <hbox align="center">
+    <label id="jessnixPersonalizeAccentLabel" control="jessnixPersonalizeAccent"
+           data-l10n-id="jessnix-personalize-accent-label"/>
+    <html:input id="jessnixPersonalizeAccent" type="color"/>
+    <button id="jessnixPersonalizeAccentReset" data-l10n-id="jessnix-personalize-accent-system"/>
+  </hbox>
+
+  <description id="jessnixPersonalizeError" class="description-deemphasized" hidden="true"/>
+</groupbox>

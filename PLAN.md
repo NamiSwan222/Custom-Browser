@@ -70,17 +70,36 @@ Jessnix-Browser/
 - [ ] Remaining Zen services: Zen mods store, `share.zen-browser.app` (review in Phase 2)
 - [ ] Windows installer (`scripts/jessnix.ps1 package`)
 
-### Phase 2: Privacy defaults (the LibreWolf layer)
-Zen already turns off most Mozilla telemetry. On top, in `prefs/`:
-- [ ] Telemetry, studies, crash reporting and usage pings all off (verify Zen's list against LibreWolf's)
-- [ ] Default search: DuckDuckGo (switchable to Startpage, Brave Search, SearXNG, Google)
-- [ ] Enhanced Tracking Protection: strict; HTTPS-Only mode on
-- [ ] WebRTC IP-leak protection, trimmed cross-site referrers
-- [ ] Fingerprinting protection (Firefox's fingerprinting protection, without the site breakage of full resistFingerprinting)
-- [ ] Optional: clear cookies/history on exit, with a per-site keep list
+### Phase 2: Privacy defaults (the LibreWolf + Brave layer)
+Zen already turns off Mozilla telemetry, studies and crash-report sending (`prefs/privatefox/`). Jessnix adds, in `prefs/jessnix/privacy.yaml`:
+- [x] Enhanced Tracking Protection: strict; HTTPS-Only mode on
+- [x] Cookie banners answered with "reject"
+- [x] Tracking parameters stripped from links
+- [x] Fingerprinting protection (Firefox's, without the site breakage of full resistFingerprinting)
+- [x] WebRTC IP-leak protection, cross-site referrers trimmed to the origin
+- [ ] Default search: DuckDuckGo (Firefox only lets a policy or its search config change it; decide which)
+- [ ] Optional: clear cookies/history on exit, with a per-site keep list (Firefox has per-site "delete on close" already)
+
+**Brave features, and where they come from in Jessnix.** Crypto (Rewards, Wallet), the paid VPN, Leo AI and Brave News are left out on purpose.
+
+| Brave | Jessnix |
+|---|---|
+| Shields: ads and trackers | bundled uBlock Origin + strict tracking protection |
+| HTTPS by default | HTTPS-Only mode |
+| Fingerprint randomizing | Firefox fingerprinting protection |
+| Cookie consent blocking | Firefox cookie-banner handling (reject) |
+| Query/debounce link cleaning | Firefox query stripping + uBlock Origin filters |
+| Global Privacy Control | on (Zen) |
+| Vertical tabs, tab groups | Zen vertical tabs, spaces, folders |
+| Split view | Zen split view |
+| Password manager, sync | Firefox password manager; Firefox Sync |
+| Private window with Tor | not planned (needs the Tor network bundled) |
 
 ### Phase 3: Speed and daily-use basics
-- [ ] **Bundled uBlock Origin** (Firefox still supports the full version), as LibreWolf does
+- [x] **Bundled uBlock Origin 1.76.4** (`scripts/fetch_ublock.py` downloads the pinned, checksummed release; Firefox installs it into each new profile, then it updates itself)
+- [x] Logins remembered: password manager on, cookies kept between sessions (`prefs/jessnix/daily.yaml`)
+- [x] Bookmarks: the star in the address bar is back (Zen hid it) and the bookmarks toolbar shows on new tabs
+- [ ] Release build (link-time optimization) for daily use
 - [ ] Hebrew language pack and spellcheck included
 - [ ] Tab unloading on, hardware video decode confirmed
 - [ ] Bookmark/password import from Chrome/Edge works
@@ -95,6 +114,7 @@ Each feature lives in `src/zen/jessnix/` (or its own folder) and gets a note in 
 | Vertical tabs, spaces (Zen "workspaces") | Comes with Zen |
 | Split view | Comes with Zen |
 | Compact mode, mods/themes store | Comes with Zen |
+| **Personalize** (Settings > Look and Feel): each person sets the browser's name, window icon, a background image and the accent color (`src/zen/jessnix/`) | Built |
 | **Jessnix new tab page**: mascot, clock, search, shortcut tiles, no network requests | To build (Low) |
 | **Mascot theme**: purple, from the icon, light + dark | To build (Low) |
 | **Command palette** (Ctrl+K): tabs, history, bookmarks, settings, actions | To build (Medium) |

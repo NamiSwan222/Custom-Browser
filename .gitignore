@@ -39,3 +39,6 @@ bloat-dump.log
 
 # Jessnix build logs
 .logs/
+
+# Downloaded by scripts/fetch_ublock.py
+src/browser/app/distribution/extensions/*.xpi

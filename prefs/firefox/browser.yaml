@@ -17,8 +17,9 @@
 - name: browser.tabs.fadeOutExplicitlyUnloadedTabs
   value: true
 
+# Jessnix: bookmarks toolbar on new tabs (Firefox's default); Zen had "never".
 - name: browser.toolbars.bookmarks.visibility
-  value: "never"
+  value: "newtab"
 
 - name: widget.non-native-theme.scrollbar.style
   value: 2

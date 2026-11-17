@@ -119,13 +119,20 @@ switch ($Step) {
         # package.json's init is download + import + bootstrap; npm would carry on
         # past a failed step, so they run one at a time here.
         Invoke-Step 'npm run download'
+        Invoke-Step 'python3 scripts\fetch_ublock.py'
         Invoke-Step 'npm run import'
         & $bootstrap
         Invoke-Step 'python3 scripts\update_en_US_packs.py'
     }
     'bootstrap' { & $bootstrap }
     # After changing src/, prefs/ or configs/ (branding): copy them into engine/.
-    'import'    { & $selectBrand; Invoke-Step 'npm run import' }
+    'import'    {
+        & $selectBrand
+        Invoke-Step 'python3 scripts\fetch_ublock.py'
+        Invoke-Step 'npm run import'
+        # Jessnix's and Zen's English strings (locales/en-US) into engine/.
+        Invoke-Step 'python3 scripts\update_en_US_packs.py'
+    }
     'build'     { Invoke-Build 'build' 'build' }
     'ui'        { Invoke-Build 'build:ui' 'build faster' }
     'start'     { Invoke-Step 'python3 mach run --noprofile' $engine }
