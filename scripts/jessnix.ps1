@@ -178,9 +178,14 @@ switch ($Step) {
         $sea = Join-Path $obj 'dist\install\sea'
         New-Item -ItemType Directory -Force $sea | Out-Null
         $built = Join-Path $sea "jessnix-$version.win64.installer.exe"
+        # The self-extractor stub carries Firefox's installer icon; a copy with
+        # the product icon (branding\jessnix.ico) is used instead.
+        $stub = Join-Path $obj 'jessnix-7zSD.Win32.sfx'
+        Invoke-Step ("python3 scripts\jessnix_installer_icon.py engine\other-licenses\7zstub\firefox\7zSD.Win32.sfx " +
+            "branding\jessnix.ico `"$stub`"")
         Invoke-Step ("python3 mach repackage installer --tag browser\installer\windows\app.tag " +
             "--setupexe `"$obj\browser\installer\windows\instgen\setup.exe`" --package `"$($zip.FullName)`" " +
-            "--sfx-stub other-licenses\7zstub\firefox\7zSD.Win32.sfx --package-name jessnix --output `"$built`"") $engine
+            "--sfx-stub `"$stub`" --package-name jessnix --output `"$built`"") $engine
         $setup = Get-Item $built -ErrorAction SilentlyContinue
         if (-not $setup) { Write-Log 'No installer was made.'; Write-Log 'exit: 1'; exit 1 }
         $out = Join-Path $Repo 'dist'

@@ -25,18 +25,18 @@ REPO = Path(__file__).resolve().parent.parent
 SRC = REPO / 'branding'
 OUT = REPO / 'configs/branding/release'
 
-# The icon's own deep purple, behind Start menu tiles and the installer art.
-DEEP_PURPLE = (0x4C, 0x18, 0x63)
-NIGHT = (0x16, 0x06, 0x1D)
+# The globe's own navy, behind Start menu tiles and the installer art.
+ICON_BACKGROUND = (0x07, 0x1E, 0x54)
+NIGHT = (0x03, 0x0D, 0x26)
 
-ICON = Image.open(SRC / 'png/icon_256.png').convert('RGBA')
+# The largest source the icon has: png/icon_1024.png, else png/icon_256.png.
+ICON = Image.open(SRC / ('png/icon_1024.png' if (SRC / 'png/icon_1024.png').exists() else 'png/icon_256.png')).convert('RGBA')
 
 
 def sized(size: int) -> Image.Image:
     """The icon at `size` px: the drawn PNG when there is one, else resized.
 
-    The source art is 256 px, so the 512 and 1024 px files are upscaled and a
-    little soft; a larger original would sharpen the about-page logo.
+    Sizes without their own PNG are scaled down from the largest source.
     """
     own = SRC / f'png/icon_{size}.png'
     if own.exists():
