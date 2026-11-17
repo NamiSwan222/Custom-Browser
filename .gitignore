@@ -42,3 +42,6 @@ bloat-dump.log
 
 # Downloaded by scripts/fetch_ublock.py
 src/browser/app/distribution/extensions/*.xpi
+
+# Browser profiles used by scripts/jessnix.ps1 start (logins, history: never commit)
+.profiles/

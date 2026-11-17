@@ -68,7 +68,7 @@ Jessnix-Browser/
 - [x] Own profile name `jessnix` and vendor, so it never shares data with Zen or Firefox
 - [ ] Wordmark (the name drawn as an image) in Jessnix's own type: waits for `DESIGN.md`
 - [ ] Remaining Zen services: Zen mods store, `share.zen-browser.app` (review in Phase 2)
-- [ ] Windows installer (`scripts/jessnix.ps1 package`)
+- [x] Windows installer (`scripts/jessnix.ps1 package`): `dist/Custom-Browser-<version>-setup.exe`, with uBlock Origin inside. Not code-signed yet (SmartScreen warns)
 
 ### Phase 2: Privacy defaults (the LibreWolf + Brave layer)
 Zen already turns off Mozilla telemetry, studies and crash-report sending (`prefs/privatefox/`). Jessnix adds, in `prefs/jessnix/privacy.yaml`:
@@ -99,7 +99,7 @@ Zen already turns off Mozilla telemetry, studies and crash-report sending (`pref
 - [x] **Bundled uBlock Origin 1.76.4** (`scripts/fetch_ublock.py` downloads the pinned, checksummed release; Firefox installs it into each new profile, then it updates itself)
 - [x] Logins remembered: password manager on, cookies kept between sessions (`prefs/jessnix/daily.yaml`)
 - [x] Bookmarks: the star in the address bar is back (Zen hid it) and the bookmarks bar shows on every page
-- [ ] Release build (link-time optimization) for daily use
+- [x] Release build (`scripts/jessnix.ps1 release`: Zen release settings, thin LTO; 31 min clean). Switching between dev and release clears the old build output (the wrapper does it)
 - [ ] Hebrew language pack and spellcheck included
 - [ ] Tab unloading on, hardware video decode confirmed
 - [ ] Bookmark/password import from Chrome/Edge works
@@ -116,6 +116,7 @@ Each feature lives in `src/zen/jessnix/` (or its own folder) and gets a note in 
 | Compact mode, mods/themes store | Comes with Zen |
 | **Personalize** (Settings > Look and Feel): each person sets the browser's name, window icon, a background image and the accent color (`src/zen/jessnix/`) | Built |
 | **Layout** (in Personalize): size (compact, comfortable, large), corners, light or dark, sidebar left or right, bookmarks bar, button names, always-visible window buttons (`jessnix-look.css`) | Built |
+| **App identity**: the Personalize name and icon also rename and re-icon the installed app's Desktop and Start menu shortcuts and taskbar button (`JessnixAppIdentity.mjs`). All-users shortcuts made by the installer need admin rights, so a per-user Start menu shortcut stands in front of them | Built |
 | **Tabs on top** as a choice | Not possible as a switch: Zen's leftover horizontal-tabs pref does nothing; would need Zen's tab code reworked |
 | **Jessnix new tab page**: mascot, clock, search, shortcut tiles, no network requests | To build (Low) |
 | **Mascot theme**: purple, from the icon, light + dark | To build (Low) |

@@ -16,13 +16,13 @@
   "brands": {
     "release": {
       "backgroundColor": "#4C1863",
-      "brandShorterName": "Jessnix",
-      "brandShortName": "Jessnix",
-      "brandFullName": "Jessnix Browser",
+      "brandShorterName": "Custom Browser",
+      "brandShortName": "Custom Browser",
+      "brandFullName": "Custom Browser",
       "release": {
         "displayVersion": "0.1.0",
         "github": {
-          "repo": "NamiSwan222/Jessnix-Browser"
+          "repo": "NamiSwan222/Custom-Browser"
         }
       }
     }

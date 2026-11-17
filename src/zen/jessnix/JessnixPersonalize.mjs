@@ -68,6 +68,10 @@ class nsJessnixPersonalize {
     this.#applyIcon();
     this.#applyBackground();
     this.#applySidebarWidth();
+    // Shortcut name and icon: one shared module for the whole session.
+    ChromeUtils.importESModule(
+      "chrome://browser/content/zen-components/JessnixAppIdentity.mjs"
+    );
   }
 
   observe(_subject, _topic, pref) {

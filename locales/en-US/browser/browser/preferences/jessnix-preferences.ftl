@@ -46,13 +46,13 @@ jessnix-look-window-buttons =
     .label = Always show the minimize, maximize and close buttons
 
 jessnix-personalize-name-header = Browser name
-jessnix-personalize-name-description = The name shown in the window title and on the taskbar. Leave it empty to use { -brand-short-name }.
+jessnix-personalize-name-description = The app’s name on your Desktop and Start menu shortcuts, the taskbar and the window title. Leave it empty to use { -brand-short-name }.
 jessnix-personalize-name-input =
     .placeholder = { -brand-full-name }
     .aria-label = Browser name
 
 jessnix-personalize-icon-header = App icon
-jessnix-personalize-icon-description = The icon on each window and its taskbar button. A square PNG of at least 256 × 256 pixels looks sharpest. A pinned taskbar shortcut keeps its own icon.
+jessnix-personalize-icon-description = The app’s icon on your shortcuts, the taskbar and each window. A square PNG of at least 256 × 256 pixels looks sharpest.
 
 jessnix-personalize-background-header = Background
 jessnix-personalize-background-description = An image behind your tabs and toolbars. Your space’s colors show through it.

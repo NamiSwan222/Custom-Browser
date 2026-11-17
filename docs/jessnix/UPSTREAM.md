@@ -37,6 +37,9 @@ These are the places a Zen update can conflict. Everything else Jessnix adds liv
 | `src/zen/about/zen-about.inc.xhtml` | GitHub and issue links; donate and privacy-policy links removed |
 | `src/zen/common/modules/ZenUpdates.mjs` | donate link removed from the post-update notice |
 | `src/browser/installer/windows/nsis/uninstaller-nsi.patch` | uninstall page points to Jessnix's issues |
+| `src/browser/installer/package-manifest-in.patch` | packages `distribution/extensions/` (bundled uBlock Origin); Firefox packs it only in Mozilla's own builds |
+| `src/zen/common/styles/zen-omnibox.css` | bookmark star shown unless `jessnix.urlbar.show-bookmark-star` is off |
+| `prefs/zen/view.yaml`, `prefs/firefox/browser.yaml` | window buttons always shown; bookmarks bar on every page |
 
 ## Changing a `.patch` file
 
