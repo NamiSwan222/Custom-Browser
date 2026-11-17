@@ -15,6 +15,7 @@ macOS-only and still Zen's.
 
 import base64
 import io
+import json
 import shutil
 from pathlib import Path
 
@@ -62,11 +63,20 @@ def png_svg(size: int) -> str:
             f'href="data:image/png;base64,{data}"/></svg>\n')
 
 
+def brand_name() -> str:
+    """The product name people see (surfer.json, release brand)."""
+    surfer = json.loads((REPO / 'surfer.json').read_text(encoding='utf-8'))
+    return surfer['brands']['release']['brandShortName']
+
+
 def wordmark(width: int, fill: str) -> str:
-    # Placeholder type: system font until DESIGN.md picks one.
+    # Placeholder type: system font until DESIGN.md picks one. The viewBox
+    # grows with the name (about 22px per character at 40px Segoe UI).
+    name = brand_name()
+    width = max(width, 24 * len(name))
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} 56">'
             f'<text x="0" y="42" font-family="Segoe UI, system-ui, sans-serif" '
-            f'font-size="40" font-weight="600" fill="{fill}">Jessnix</text></svg>\n')
+            f'font-size="40" font-weight="600" fill="{fill}">{name}</text></svg>\n')
 
 
 def main() -> None:

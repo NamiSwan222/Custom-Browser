@@ -13,8 +13,10 @@
     import    copy changed src/, prefs/ and configs/ (branding) into engine/
     build     full build (needed after engine or C++ changes, and the first time)
     ui        rebuild only the browser interface (JS/CSS/HTML): seconds to a minute
+    release   full optimized build for daily use and sharing (link-time
+              optimization; about an hour). `build` and `ui` go back to a dev build.
     start     run the built browser
-    package   make the installer
+    package   make the installer from the last build: dist\<Product>-<version>-setup.exe
     <other>   any other npm script in package.json, passed through
 
 .EXAMPLE
@@ -106,6 +108,21 @@ $bootstrap = { Invoke-Step 'python3 mach --no-interactive bootstrap --applicatio
 $brand = if ($env:JESSNIX_BRAND) { $env:JESSNIX_BRAND } else { 'release' }
 $selectBrand = { Invoke-Step "npm run surfer -- set brand $brand" }
 
+# dev: quick to build. release: Zen's release settings (configs/common/mozconfig,
+# ZEN_RELEASE: optimized, link-time optimization, no tests or debug info).
+function Set-BuildMode([string]$Mode) {
+    if ($Mode -eq 'release') { $env:ZEN_RELEASE = '1' } else { Remove-Item env:ZEN_RELEASE -ErrorAction SilentlyContinue }
+    # Release leaves out Firefox's test code, which changes generated files; a
+    # build on top of the other mode's output fails to compile, so start clean.
+    $modeFile = Join-Path $Repo '.surfer\dynamicConfig.buildMode.json'
+    $previous = if (Test-Path $modeFile) { (Get-Content $modeFile -Raw).Trim().Trim('"') } else { 'dev' }
+    if ($previous -ne $Mode -and (Test-Path (Join-Path $engine 'obj-x86_64-pc-windows-msvc'))) {
+        Write-Log "Switching from a $previous build to ${Mode}: clearing the old build output."
+        Invoke-Step 'python3 mach clobber' $engine
+    }
+    Invoke-Step "npm run surfer -- set buildMode $Mode"
+}
+
 # surfer build writes engine\mozconfig (brand, version, update settings) and then
 # runs `./mach build` the same unrunnable way. Its config step is kept, and the
 # build itself runs here. `faster` rebuilds only the interface (JS/CSS/HTML).
@@ -136,9 +153,52 @@ switch ($Step) {
         # Jessnix's and Zen's English strings (locales/en-US) into engine/.
         Invoke-Step 'python3 scripts\update_en_US_packs.py'
     }
-    'build'     { Invoke-Build 'build' 'build' }
-    'ui'        { Invoke-Build 'build:ui' 'build faster' }
-    'start'     { Invoke-Step 'python3 mach run --noprofile' $engine }
+    'build'     { Set-BuildMode dev; Invoke-Build 'build' 'build' }
+    'ui'        { Set-BuildMode dev; Invoke-Build 'build:ui' 'build faster' }
+    'release'   { Set-BuildMode release; Invoke-Build 'build' 'build' }
+    'package'   {
+        # Same mode as the last build, or mach would see a changed mozconfig and
+        # reconfigure. surfer remembers the mode in .surfer/.
+        $modeFile = Join-Path $Repo '.surfer\dynamicConfig.buildMode.json'
+        if ((Test-Path $modeFile) -and ((Get-Content $modeFile -Raw) -match 'release')) { $env:ZEN_RELEASE = '1' }
+        $env:MAR_CHANNEL_ID = $brand
+        $env:ACCEPTED_MAR_CHANNEL_IDS = $brand
+        # surfer's package step calls mach the same unrunnable way, so the
+        # installer is made here: mach package, then the NSIS setup.exe.
+        Invoke-Step 'python3 mach package' $engine
+        $version = (Get-Content (Join-Path $Repo 'surfer.json') -Raw | ConvertFrom-Json).brands.$brand.release.displayVersion
+        $obj = Join-Path $engine 'obj-x86_64-pc-windows-msvc'
+        $zip = Get-ChildItem (Join-Path $obj 'dist') -Filter '*.win64.zip' | Sort-Object LastWriteTime | Select-Object -Last 1
+        if (-not $zip) { Write-Log 'mach package made no .win64.zip.'; Write-Log 'exit: 1'; exit 1 }
+        # The NSIS setup.exe is made during the build; this wraps it and the zip
+        # into one self-extracting installer, as Firefox's own release does.
+        $sea = Join-Path $obj 'dist\install\sea'
+        New-Item -ItemType Directory -Force $sea | Out-Null
+        $built = Join-Path $sea "jessnix-$version.win64.installer.exe"
+        Invoke-Step ("python3 mach repackage installer --tag browser\installer\windows\app.tag " +
+            "--setupexe `"$obj\browser\installer\windows\instgen\setup.exe`" --package `"$($zip.FullName)`" " +
+            "--sfx-stub other-licenses\7zstub\firefox\7zSD.Win32.sfx --package-name jessnix --output `"$built`"") $engine
+        $setup = Get-Item $built -ErrorAction SilentlyContinue
+        if (-not $setup) { Write-Log 'No installer was made.'; Write-Log 'exit: 1'; exit 1 }
+        $out = Join-Path $Repo 'dist'
+        New-Item -ItemType Directory -Force $out | Out-Null
+        # Named after the product (surfer.json), e.g. Custom-Browser-0.1.0-setup.exe.
+        $product = (Get-Content (Join-Path $Repo 'surfer.json') -Raw | ConvertFrom-Json).brands.$brand.brandShortName -replace '\s+', '-'
+        $target = Join-Path $out "$product-$version-setup.exe"
+        Copy-Item $setup.FullName $target -Force
+        # Keep the three newest installers.
+        Get-ChildItem $out -Filter '*-setup.exe' | Sort-Object LastWriteTime -Descending |
+            Select-Object -Skip 3 | Remove-Item -Force
+        Write-Log "Installer: $target"
+    }
+    'start'     {
+        # The profile lives outside the build output: `mach clobber` and a
+        # switch between dev and release delete engine\obj-*, and with it any
+        # profile kept there (mach run's default).
+        $devProfile = Join-Path $Repo '.profiles\dev'
+        New-Item -ItemType Directory -Force $devProfile | Out-Null
+        Invoke-Step "python3 mach run --profile `"$devProfile`"" $engine
+    }
     default     { Invoke-Step "npm run $Step$extra" }
 }
 Write-Log "exit: 0"

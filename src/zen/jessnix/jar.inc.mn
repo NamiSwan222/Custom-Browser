@@ -4,6 +4,7 @@
 # Jessnix's own features. Included from browser/base/content/zen-assets.jar.inc.mn.
 
         content/browser/zen-components/JessnixPersonalize.mjs                   (../../zen/jessnix/JessnixPersonalize.mjs)
+        content/browser/zen-components/JessnixAppIdentity.mjs                  (../../zen/jessnix/JessnixAppIdentity.mjs)
         content/browser/zen-styles/jessnix-personalize.css                      (../../zen/jessnix/jessnix-personalize.css)
         content/browser/zen-styles/jessnix-look.css                              (../../zen/jessnix/jessnix-look.css)
         content/browser/preferences/jessnix-settings.js                         (../../zen/jessnix/jessnix-settings.js)
