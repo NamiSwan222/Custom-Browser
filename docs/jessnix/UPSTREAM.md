@@ -23,3 +23,26 @@ cd <this repo> && git apply -3 /tmp/zen-update.diff
 ```
 
 Then fix any conflicts, update the table above, rebuild and test.
+
+## Zen files Jessnix changes
+
+These are the places a Zen update can conflict. Everything else Jessnix adds lives in its own files.
+
+| File | Jessnix change |
+|---|---|
+| `surfer.json` | name, app ID, binary `jessnix`, brand names, version, own GitHub repo, no update host; Zen's "twilight" brand removed |
+| `configs/common/mozconfig` | app basename, distribution ID, source repo, `--disable-updater` |
+| `configs/branding/release/` | all images (made by `scripts/jessnix_branding.py`); `configs/branding/twilight/` removed |
+| `src/toolkit/moz-configure.patch` | vendor `Jessnix`, profile `jessnix`, distribution ID |
+| `src/zen/about/zen-about.inc.xhtml` | GitHub and issue links; donate and privacy-policy links removed |
+| `src/zen/common/modules/ZenUpdates.mjs` | donate link removed from the post-update notice |
+| `src/browser/installer/windows/nsis/uninstaller-nsi.patch` | uninstall page points to Jessnix's issues |
+
+## Changing a `.patch` file
+
+surfer re-applies a changed patch on top of the already patched file, which fails. Restore the target file to Firefox's version first, then import:
+
+```powershell
+git -C engine checkout -- <path the patch changes>
+.\scripts\jessnix.ps1 import
+```

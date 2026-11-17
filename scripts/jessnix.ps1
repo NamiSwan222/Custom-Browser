@@ -7,6 +7,7 @@
   .logs\<step>-<time>.txt as well as the console.
 
     init      download Firefox, apply Jessnix/Zen changes, install build tools (first time)
+    import    copy changed src/, prefs/ and configs/ (branding) into engine/
     build     full build (needed after engine or C++ changes, and the first time)
     ui        rebuild only the browser interface (JS/CSS/HTML): seconds to a minute
     start     run the built browser
@@ -97,12 +98,17 @@ $engine = Join-Path $Repo 'engine'
 # Firefox's mach is a Python script.
 $bootstrap = { Invoke-Step 'python3 mach --no-interactive bootstrap --application-choice browser' $engine }
 
+# The brand surfer builds: configs/branding/release is Jessnix. Without one, surfer
+# falls back to Firefox's "unofficial" branding.
+$brand = if ($env:JESSNIX_BRAND) { $env:JESSNIX_BRAND } else { 'release' }
+$selectBrand = { Invoke-Step "npm run surfer -- set brand $brand" }
+
 # surfer build writes engine\mozconfig (brand, version, update settings) and then
 # runs `./mach build` the same unrunnable way. Its config step is kept, and the
 # build itself runs here. `faster` rebuilds only the interface (JS/CSS/HTML).
 function Invoke-Build([string]$SurferScript, [string]$MachArgs) {
+    & $selectBrand
     Invoke-Step "npm run $SurferScript$extra" $Repo "'mach' is not recognized"
-    $brand = if ($env:JESSNIX_BRAND) { $env:JESSNIX_BRAND } else { 'unofficial' }
     $env:MAR_CHANNEL_ID = $brand
     $env:ACCEPTED_MAR_CHANNEL_IDS = $brand
     Invoke-Step "python3 mach $MachArgs" $engine
@@ -118,6 +124,8 @@ switch ($Step) {
         Invoke-Step 'python3 scripts\update_en_US_packs.py'
     }
     'bootstrap' { & $bootstrap }
+    # After changing src/, prefs/ or configs/ (branding): copy them into engine/.
+    'import'    { & $selectBrand; Invoke-Step 'npm run import' }
     'build'     { Invoke-Build 'build' 'build' }
     'ui'        { Invoke-Build 'build:ui' 'build faster' }
     'start'     { Invoke-Step 'python3 mach run --noprofile' $engine }

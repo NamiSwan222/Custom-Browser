@@ -57,16 +57,18 @@ Jessnix-Browser/
 ### Phase 0: First build (goal: plain Zen, built on my machine)
 - [x] Install MozillaBuild, sccache, 7-Zip on PATH
 - [x] Import Zen 1.24.2b (Firefox 160)
-- [ ] `scripts/jessnix.ps1 init`: download Firefox and prepare it
-- [ ] `scripts/jessnix.ps1 build`, then `start`: the browser runs
+- [x] `scripts/jessnix.ps1 init`: download Firefox and prepare it
+- [x] `scripts/jessnix.ps1 build` (29.7 min first time), then `start`: the browser runs
 
 ### Phase 1: Rebrand (goal: it says Jessnix everywhere)
-- [ ] `surfer.json`: name, vendor, app ID and binary `jessnix.exe`, brand names, own GitHub repo
-- [ ] Icons from `branding/` into `configs/branding/release/` (app, installer, tiles, private-browsing icon)
-- [ ] **Updates point away from Zen's server** (`updateHostname`), or Zen's updater would replace Jessnix with Zen
-- [ ] Zen links (website, welcome page, support, crash reports) point to Jessnix or are removed
-- [ ] Own profile folder, so it never shares data with Zen or Firefox
-- [ ] Windows installer
+- [x] `surfer.json`: name, app ID and binary `jessnix.exe`, brand names, version 0.1.0, own GitHub repo
+- [x] Icons from `branding/` into `configs/branding/release/` (`scripts/jessnix_branding.py`). The source art is 256 px, so the large about-page logo is upscaled; a bigger original would sharpen it
+- [x] **Updater off** (`--disable-updater`), so Zen's server can never replace Jessnix with Zen
+- [x] About page, post-update notice and uninstall page link to Jessnix's GitHub; Zen's donate and privacy-policy links removed
+- [x] Own profile name `jessnix` and vendor, so it never shares data with Zen or Firefox
+- [ ] Wordmark (the name drawn as an image) in Jessnix's own type: waits for `DESIGN.md`
+- [ ] Remaining Zen services: Zen mods store, `share.zen-browser.app` (review in Phase 2)
+- [ ] Windows installer (`scripts/jessnix.ps1 package`)
 
 ### Phase 2: Privacy defaults (the LibreWolf layer)
 Zen already turns off most Mozilla telemetry. On top, in `prefs/`:
