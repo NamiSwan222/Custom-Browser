@@ -27,7 +27,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
-  ShellService: "moz-src:///browser/components/shell/ShellService.sys.mjs",
+  NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
   TaskbarTabsUtils:
     "moz-src:///browser/components/taskbartabs/TaskbarTabsUtils.sys.mjs",
 });
@@ -135,9 +135,54 @@ async function chosenIcon() {
       null,
       mime
     );
-    await lazy.ShellService.writeShortcutIcon(new lazy.FileUtils.File(icoPath), image);
+    await IOUtils.write(icoPath, multiSizeIco(image));
   }
   return new lazy.FileUtils.File(icoPath);
+}
+
+// Every size Windows draws (taskbar, Start, Explorer, high DPI). An .ico with
+// only a 256px image, as Firefox's own writeShortcutIcon makes, shows as a
+// blank page on the taskbar. Small sizes are classic bitmaps: older parts of
+// Windows can't read small PNG icons. 256px stays PNG, as Windows expects.
+const ICO_SIZES = [16, 20, 24, 32, 40, 48, 64, 128, 256];
+
+function multiSizeIco(image) {
+  const imgTools = Cc["@mozilla.org/image/tools;1"].getService(Ci.imgITools);
+  // Firefox's ICO encoder makes a one-image .ico per size; their directory
+  // entries and images are joined into one file.
+  const parts = ICO_SIZES.map(size => {
+    const format = size == 256 ? "png" : "bmp";
+    const stream = imgTools.encodeScaledImage(
+      image,
+      "image/vnd.microsoft.icon",
+      size,
+      size,
+      `format=${format};bpp=32`
+    );
+    const ico = new Uint8Array(lazy.NetUtil.readInputStream(stream, stream.available()));
+    stream.close();
+    const view = new DataView(ico.buffer);
+    const length = view.getUint32(6 + 8, true);
+    const offset = view.getUint32(6 + 12, true);
+    return { entry: ico.slice(6, 6 + 16), image: ico.slice(offset, offset + length) };
+  });
+  // ICONDIR (6 bytes), one ICONDIRENTRY (16 bytes) per size, then the images.
+  const headerSize = 6 + 16 * parts.length;
+  const total = headerSize + parts.reduce((sum, part) => sum + part.image.length, 0);
+  const out = new Uint8Array(total);
+  const view = new DataView(out.buffer);
+  view.setUint16(0, 0, true); // reserved
+  view.setUint16(2, 1, true); // type: icon
+  view.setUint16(4, parts.length, true);
+  let offset = headerSize;
+  parts.forEach((part, i) => {
+    const entry = 6 + 16 * i;
+    out.set(part.entry, entry);
+    view.setUint32(entry + 12, offset, true);
+    out.set(part.image, offset);
+    offset += part.image.length;
+  });
+  return out;
 }
 
 // Removes .ico files made for earlier choices.

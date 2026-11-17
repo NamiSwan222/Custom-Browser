@@ -141,6 +141,7 @@ switch ($Step) {
         Invoke-Step 'npm run download'
         Invoke-Step 'python3 scripts\fetch_ublock.py'
         Invoke-Step 'npm run import'
+        Invoke-Step 'python3 scripts\jessnix_brand_terms.py'
         & $bootstrap
         Invoke-Step 'python3 scripts\update_en_US_packs.py'
     }
@@ -150,6 +151,8 @@ switch ($Step) {
         & $selectBrand
         Invoke-Step 'python3 scripts\fetch_ublock.py'
         Invoke-Step 'npm run import'
+        # Brand names surfer's branding template leaves out.
+        Invoke-Step 'python3 scripts\jessnix_brand_terms.py'
         # Jessnix's and Zen's English strings (locales/en-US) into engine/.
         Invoke-Step 'python3 scripts\update_en_US_packs.py'
     }
