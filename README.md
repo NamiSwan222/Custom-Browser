@@ -1,4 +1,4 @@
-<p align="center"><img src="branding/png/icon_128.png" width="96" alt="Jessnix icon"></p>
+<p align="center"><img src="branding/png/icon_128.png" width="96" alt="Custom Browser icon"></p>
 
 # Jessnix Browser
 

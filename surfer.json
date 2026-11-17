@@ -15,12 +15,12 @@
   "addons": {},
   "brands": {
     "release": {
-      "backgroundColor": "#4C1863",
+      "backgroundColor": "#071E54",
       "brandShorterName": "Custom Browser",
       "brandShortName": "Custom Browser",
       "brandFullName": "Custom Browser",
       "release": {
-        "displayVersion": "0.1.1",
+        "displayVersion": "0.1.2",
         "github": {
           "repo": "NamiSwan222/Custom-Browser"
         }
