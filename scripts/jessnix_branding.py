@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 NamiSwan222. See LICENSE-MIT.
 """Builds Jessnix's branding images for surfer from the icon in branding/.
 
 Writes configs/branding/release/, the folder surfer turns into Firefox's branding

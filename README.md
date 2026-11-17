@@ -22,4 +22,9 @@ npm i
 
 ## License
 
-[MPL-2.0](LICENSE), like Zen and Firefox. Zen's code is by the Zen OSS Team.
+Two licences, by file:
+
+- **MIT** ([LICENSE-MIT](LICENSE-MIT)): Jessnix's own files, each marked `SPDX-License-Identifier: MIT` at the top: `src/zen/jessnix/`, `prefs/jessnix/`, the Personalize settings page and its text, and the `scripts/jessnix*` / `fetch_ublock.py` / `jessnix_branding.py` scripts.
+- **MPL-2.0** ([LICENSE](LICENSE)): everything that comes from Zen and Firefox, including Jessnix's edits inside those files. The MPL requires that these files stay under the MPL. Zen's code is by the Zen OSS Team.
+
+uBlock Origin is downloaded at build time and is GPL-3.0; it is not stored in this repository.

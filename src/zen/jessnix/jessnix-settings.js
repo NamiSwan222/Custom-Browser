@@ -1,6 +1,5 @@
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 NamiSwan222. See LICENSE-MIT.
 
 /* global Preferences */
 
@@ -66,6 +65,8 @@ var gJessnixPersonalizeSettings = {
         Services.prefs.setStringPref(JESSNIX_PREF_ACCENT, JESSNIX_SYSTEM_ACCENT)
       );
 
+    this.initLayoutControls();
+
     const watched = [JESSNIX_PREF_ICON, JESSNIX_PREF_BACKGROUND, JESSNIX_PREF_ACCENT];
     for (const pref of watched) {
       Services.prefs.addObserver(pref, this);
@@ -84,6 +85,71 @@ var gJessnixPersonalizeSettings = {
 
   observe() {
     this.updatePreviews();
+  },
+
+  // Layout controls carry their pref in data-jessnix-pref (and -type, and
+  // -inverted for a checkbox that means the opposite of its pref). Some of these
+  // prefs are Zen's or Firefox's and may already be bound elsewhere in Settings,
+  // so they are read and written directly instead of through Preferences.
+  initLayoutControls() {
+    const controls = document.querySelectorAll(
+      "#jessnixPersonalizeGroup [data-jessnix-pref]"
+    );
+    const prefs = new Set();
+    for (const control of controls) {
+      const pref = control.dataset.jessnixPref;
+      prefs.add(pref);
+      control.addEventListener("command", () => this.writeLayoutControl(control));
+    }
+    const sync = () => {
+      for (const control of controls) {
+        this.readLayoutControl(control);
+      }
+    };
+    const observer = { observe: sync };
+    for (const pref of prefs) {
+      Services.prefs.addObserver(pref, observer);
+    }
+    window.addEventListener(
+      "unload",
+      () => {
+        for (const pref of prefs) {
+          Services.prefs.removeObserver(pref, observer);
+        }
+      },
+      { once: true }
+    );
+    sync();
+  },
+
+  readLayoutControl(control) {
+    const { jessnixPref: pref, jessnixType: type, jessnixInverted } = control.dataset;
+    let value;
+    if (type == "int") {
+      value = Services.prefs.getIntPref(pref, 0);
+    } else if (type == "bool") {
+      value = Services.prefs.getBoolPref(pref, false);
+    } else {
+      value = Services.prefs.getStringPref(pref, "");
+    }
+    if (control.localName == "checkbox") {
+      control.checked = jessnixInverted ? !value : value;
+    } else {
+      control.value = String(value);
+    }
+  },
+
+  writeLayoutControl(control) {
+    const { jessnixPref: pref, jessnixType: type, jessnixInverted } = control.dataset;
+    if (control.localName == "checkbox") {
+      Services.prefs.setBoolPref(pref, jessnixInverted ? !control.checked : control.checked);
+    } else if (type == "int") {
+      Services.prefs.setIntPref(pref, parseInt(control.value, 10));
+    } else if (type == "bool") {
+      Services.prefs.setBoolPref(pref, control.value == "true");
+    } else {
+      Services.prefs.setStringPref(pref, control.value);
+    }
   },
 
   setName(value) {

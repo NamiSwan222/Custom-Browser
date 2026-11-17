@@ -98,7 +98,7 @@ Zen already turns off Mozilla telemetry, studies and crash-report sending (`pref
 ### Phase 3: Speed and daily-use basics
 - [x] **Bundled uBlock Origin 1.76.4** (`scripts/fetch_ublock.py` downloads the pinned, checksummed release; Firefox installs it into each new profile, then it updates itself)
 - [x] Logins remembered: password manager on, cookies kept between sessions (`prefs/jessnix/daily.yaml`)
-- [x] Bookmarks: the star in the address bar is back (Zen hid it) and the bookmarks toolbar shows on new tabs
+- [x] Bookmarks: the star in the address bar is back (Zen hid it) and the bookmarks bar shows on every page
 - [ ] Release build (link-time optimization) for daily use
 - [ ] Hebrew language pack and spellcheck included
 - [ ] Tab unloading on, hardware video decode confirmed
@@ -115,6 +115,8 @@ Each feature lives in `src/zen/jessnix/` (or its own folder) and gets a note in 
 | Split view | Comes with Zen |
 | Compact mode, mods/themes store | Comes with Zen |
 | **Personalize** (Settings > Look and Feel): each person sets the browser's name, window icon, a background image and the accent color (`src/zen/jessnix/`) | Built |
+| **Layout** (in Personalize): size (compact, comfortable, large), corners, light or dark, sidebar left or right, bookmarks bar, button names, always-visible window buttons (`jessnix-look.css`) | Built |
+| **Tabs on top** as a choice | Not possible as a switch: Zen's leftover horizontal-tabs pref does nothing; would need Zen's tab code reworked |
 | **Jessnix new tab page**: mascot, clock, search, shortcut tiles, no network requests | To build (Low) |
 | **Mascot theme**: purple, from the icon, light + dark | To build (Low) |
 | **Command palette** (Ctrl+K): tabs, history, bookmarks, settings, actions | To build (Medium) |

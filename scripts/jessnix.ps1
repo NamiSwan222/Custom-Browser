@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 NamiSwan222. See LICENSE-MIT.
+
 <#
 .SYNOPSIS
   Runs Jessnix (Zen) build steps on Windows with the environment they need.
