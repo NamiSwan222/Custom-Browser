@@ -873,7 +873,31 @@
         Services.prefs.getIntPref(
           "browser.tabs.dragDrop.moveOverThresholdPercent"
         ) / 100;
+      // Jessnix: tabs in a row (tabs on top) split left/right instead.
+      if (!this._tabbrowserTabs.verticalMode) {
+        return (event.clientX - rect.left) / rect.width <= threshold;
+      }
       return (event.clientY - rect.top) / rect.height <= threshold;
+    }
+
+    /**
+     * Jessnix: stands the shared drop indicator up beside an element, for tabs
+     * in a row (tabs on top).
+     *
+     * @param {object} options
+     * @param {number} options.left - The line's x, in px
+     * @param {number} options.top - Top of the element, in px
+     * @param {number} options.height - Element height, in px
+     * @returns {Element} The indicator
+     */
+    _placeVerticalDropIndicator({ left, top, height }) {
+      const indicator = gZenPinnedTabManager.dragIndicator;
+      indicator.setAttribute("orientation", "vertical");
+      indicator.style.setProperty("--indicator-top", `${Math.round(top)}px`);
+      indicator.style.setProperty("--indicator-height", `${Math.round(height)}px`);
+      indicator.style.left = `${Math.round(left)}px`;
+      indicator.style.removeProperty("top");
+      return indicator;
     }
 
     /**
@@ -1719,16 +1743,29 @@
         }
         dropBefore =
           !showIndicatorUnderNewTabButton && this._dropsBefore(event, rect);
-        const top = Math.round(dropBefore ? rect.top : rect.top + rect.height);
         const indicatorStyle = gZenPinnedTabManager.dragIndicator.style;
-        if (indicatorStyle.getPropertyValue("--indicator-top") !== `${top}px`) {
-          shouldPlayHapticFeedback = true;
+        if (!this._tabbrowserTabs.verticalMode) {
+          // Jessnix: tabs in a row, so the line stands between two tabs.
+          const left = Math.round(dropBefore ? rect.left - 2 : rect.right + 1);
+          if (indicatorStyle.left !== `${left}px`) {
+            shouldPlayHapticFeedback = true;
+          }
+          this._placeVerticalDropIndicator({
+            left,
+            top: rect.top + separation / 2,
+            height: rect.height - separation,
+          });
+        } else {
+          const top = Math.round(dropBefore ? rect.top : rect.top + rect.height);
+          if (indicatorStyle.getPropertyValue("--indicator-top") !== `${top}px`) {
+            shouldPlayHapticFeedback = true;
+          }
+          this._placeDropIndicator({
+            left: rect.left + separation / 2,
+            width: rect.width - separation,
+            top,
+          });
         }
-        this._placeDropIndicator({
-          left: rect.left + separation / 2,
-          width: rect.width - separation,
-          top,
-        });
         this.#removeDragOverBackground();
         if (!isTab(dropElement) && dropElement?.parentElement?.isZenFolder) {
           dropElement = dropElement.parentElement;

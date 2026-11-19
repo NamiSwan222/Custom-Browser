@@ -1,0 +1,270 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 NamiSwan222. See LICENSE-MIT. */
+
+/* Jessnix: tabs on top (Personalize > Layout > Tabs), set by JessnixTopTabs.mjs.
+ * Zen's sidebar (#navigator-toolbox) becomes one row across the window: Zen's
+ * buttons, the tabs, Library and Create New as icons, then the window buttons.
+ * The address bar row below it is Zen's own (single toolbar off). */
+
+:root[jessnix-top-tabs] {
+  --jessnix-tab-row-height: 44px;
+  --jessnix-tab-height: 32px;
+
+  /* The sidebar box becomes the tab row, above the page. */
+  & #browser {
+    flex-direction: column !important;
+  }
+
+  & #navigator-toolbox {
+    flex-direction: row !important;
+    align-items: center !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: var(--jessnix-tab-row-height) !important;
+    min-height: var(--jessnix-tab-row-height) !important;
+    padding: 0 0 0 6px !important;
+    margin: 0 !important;
+  }
+
+  /* The tab row's empty space moves the window, as a title bar does. Firefox
+   * marks only toolbars as draggable, and in the row the empty space belongs
+   * to Zen's tab lists; tabs and buttons stay no-drag (Firefox's own rule). */
+  & :is(#navigator-toolbox, #titlebar, #tabbrowser-tabs, #zen-tabs-wrapper,
+        #tabbrowser-arrowscrollbox, zen-workspace, .workspace-arrowscrollbox,
+        .zen-workspace-tabs-section, #zen-essentials, #tabbrowser-arrowscrollbox-periphery) {
+    -moz-window-dragging: drag !important;
+  }
+
+  /* The sidebar's resize handle, the space name row and the empty area below
+   * the tabs have no place in a row. */
+  & #zen-sidebar-splitter,
+  & #zen-toggle-compact-mode,
+  & .zen-current-workspace-indicator,
+  & .zen-workspace-empty-space,
+  & .pinned-tabs-container-separator,
+  & #zen-library-download-list {
+    display: none !important;
+  }
+
+  & #zen-sidebar-top-buttons {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    height: 100% !important;
+  }
+
+  & :is(#titlebar, #TabsToolbar, #TabsToolbar > .toolbar-items, #TabsToolbar-customization-target) {
+    flex-direction: row !important;
+    flex: 1 1 auto !important;
+    align-items: center !important;
+    min-width: 0 !important;
+    height: 100% !important;
+  }
+
+  /* The tab lists, from the outer box down to each space's own list. */
+  & :is(#tabbrowser-tabs, #zen-tabs-wrapper, #tabbrowser-arrowscrollbox, .workspace-arrowscrollbox) {
+    display: flex !important;
+    flex-direction: row !important;
+    flex: 1 1 auto !important;
+    align-items: center !important;
+    min-width: 0 !important;
+    width: auto !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    align-self: stretch !important;
+    /* Zen pulls these out to the sidebar's edges, which in a row pushes the
+     * first tab off the left of the window. */
+    margin: 0 !important;
+  }
+
+  /* Only the current space shows; Zen slides the others in from the side. */
+  & zen-workspace {
+    position: relative !important;
+    contain: none !important;
+    flex-direction: row !important;
+    flex: 1 1 auto !important;
+    align-items: center !important;
+    min-width: 0 !important;
+    width: auto !important;
+    height: 100% !important;
+    padding: 0 !important;
+    transform: none !important;
+
+    &:not([active]) {
+      display: none !important;
+    }
+  }
+
+  /* Zen sizes these to the sidebar's whole width. */
+  & .zen-workspace-tabs-section {
+    flex-direction: row !important;
+    align-items: center !important;
+    width: auto !important;
+    min-width: 0 !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+  }
+
+  & .zen-workspace-pinned-tabs-section {
+    flex: 0 0 auto !important;
+  }
+
+  & .zen-workspace-normal-tabs-section {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+
+  /* Essentials and pinned tabs: icon-only, at the start of the row. */
+  & #zen-essentials,
+  & .zen-essentials-container {
+    display: flex !important;
+    flex-direction: row !important;
+    flex: 0 0 auto !important;
+    align-items: center !important;
+    position: static !important;
+    width: auto !important;
+    min-width: 0 !important;
+    height: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    gap: 2px !important;
+  }
+
+  & :is(.tabbrowser-tab[zen-essential], .tabbrowser-tab[pinned]) {
+    flex: 0 0 auto !important;
+    width: calc(var(--jessnix-tab-height) + 8px) !important;
+    min-width: 0 !important;
+    max-width: none !important;
+
+    & :is(.tab-label-container, .tab-close-button) {
+      display: none !important;
+    }
+  }
+
+  /* Normal tabs share the row and shrink as more open, as in Chrome. Only
+   * [fadein] tabs: Firefox opens and closes a tab in a row by animating its
+   * width from/to 0.1px without [fadein], and removes a closing tab only once
+   * that animation ends. */
+  & .tabbrowser-tab[fadein]:not([zen-essential], [pinned]) {
+    flex: 1 1 220px !important;
+    min-width: 72px !important;
+    max-width: 240px !important;
+    width: auto !important;
+  }
+
+  & .tabbrowser-tab:not([fadein], [zen-essential], [pinned]) {
+    flex: 0 0 auto !important;
+    min-width: 0.1px !important;
+    max-width: 0.1px !important;
+    margin: 0 !important;
+  }
+
+  & .tabbrowser-tab {
+    height: var(--jessnix-tab-height) !important;
+    min-height: 0 !important;
+    margin: 0 2px !important;
+    padding: 0 !important;
+  }
+
+  & .tab-stack {
+    height: 100% !important;
+  }
+
+  /* New tab: a + right after the last tab. */
+  & #tabbrowser-arrowscrollbox-periphery {
+    order: 99 !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    height: 100% !important;
+    align-items: center !important;
+  }
+
+  & #tabs-newtab-button {
+    width: var(--jessnix-tab-height) !important;
+    height: var(--jessnix-tab-height) !important;
+    margin: 0 4px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+
+    & .toolbarbutton-text {
+      display: none !important;
+    }
+  }
+
+  /* Library and Create New as icons at the end of the row. */
+  & #zen-sidebar-foot-buttons {
+    flex-direction: row !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    height: 100% !important;
+    align-items: center !important;
+    padding: 0 4px !important;
+    margin: 0 !important;
+
+    /* Beats the Layout "button names" choice (jessnix-look.css): no room here. */
+    & > :is(#zen-library-button, #zen-create-new-button) > .toolbarbutton-text {
+      display: none !important;
+    }
+  }
+
+  & #TabsToolbar > .titlebar-buttonbox-container {
+    flex: 0 0 auto !important;
+    height: 100% !important;
+    align-self: flex-start !important;
+    margin-top: -4px !important;
+  }
+
+  & #zen-appcontent-wrapper {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+  }
+
+  /* Compact mode makes the sidebar a floating panel that slides in from the
+   * side. With tabs on top the row simply stays in place for now. The id is
+   * doubled to outweigh Zen's compact-mode rules. */
+  &[zen-compact-mode] #navigator-toolbox#navigator-toolbox {
+    position: relative !important;
+    inset: auto !important;
+    translate: none !important;
+    transform: none !important;
+    margin-top: 0 !important;
+    width: 100% !important;
+    height: var(--jessnix-tab-row-height) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+}
+
+/* The selected tab joins the address bar row below it, as in Chrome: tabs sit
+ * on the bottom edge of the row, the selected one with square bottom corners,
+ * and the row takes the selected tab's colour (Zen's own, from zen-workspaces.css;
+ * its variable is set inside each space, out of the address row's reach). */
+:root[jessnix-top-tabs] {
+  --jessnix-selected-tab-bg: light-dark(
+    color-mix(in srgb, rgba(255, 255, 255, 0.8) 98%, var(--zen-primary-color)),
+    color-mix(in srgb, rgba(255, 255, 255, 0.18) 95%, var(--zen-primary-color))
+  );
+  & :is(.zen-workspace-tabs-section, .workspace-arrowscrollbox, zen-workspace, #tabbrowser-arrowscrollbox, #zen-tabs-wrapper, #tabbrowser-tabs) {
+    align-items: flex-end !important;
+  }
+  & .tabbrowser-tab {
+    align-self: flex-end !important;
+    height: 38px !important;
+    margin-bottom: 0 !important;
+  }
+  & .tabbrowser-tab .tab-background {
+    margin: 0 !important;
+    height: 100% !important;
+    min-height: 0 !important;
+  }
+  & .tabbrowser-tab:is([selected], [multiselected]) .tab-background {
+    background: var(--jessnix-selected-tab-bg) !important;
+    border-end-start-radius: 0 !important;
+    border-end-end-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  & #zen-appcontent-navbar-wrapper {
+    background: var(--jessnix-selected-tab-bg) !important;
+  }
+}

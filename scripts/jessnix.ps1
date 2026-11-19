@@ -13,6 +13,8 @@
     import    copy changed src/, prefs/ and configs/ (branding) into engine/
     build     full build (needed after engine or C++ changes, and the first time)
     ui        rebuild only the browser interface (JS/CSS/HTML): seconds to a minute
+    cpp [dir] quick C++/Rust rebuild after a first `build` (run `import` first if
+              the change is in src/): minutes
     release   full optimized build for daily use and sharing (link-time
               optimization; about an hour). `build` and `ui` go back to a dev build.
     start     run the built browser
@@ -41,6 +43,32 @@ if (-not (Test-Path "$gitBash\bash.exe")) { throw 'Git for Windows is needed (ba
 if (-not (Test-Path 'C:\mozilla-build\start-shell.bat')) { throw 'MozillaBuild is needed in C:\mozilla-build.' }
 $env:Path = "$gitBash;C:\mozilla-build\bin;$env:Path"
 $env:MOZILLABUILD = 'C:\mozilla-build\'
+
+# This script and package.json call `python3`, which on many Windows machines is
+# only the Microsoft Store stub. Then use MozillaBuild's Python through a shim.
+$py3 = Get-Command python3 -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Source
+if (-not $py3 -or $py3 -like '*\WindowsApps\*') {
+    $shim = Join-Path $env:LOCALAPPDATA 'jessnix\bin'
+    New-Item -ItemType Directory -Force $shim | Out-Null
+    Set-Content (Join-Path $shim 'python3.cmd') '@"C:\mozilla-build\python3\python.exe" %*' -Encoding ascii
+    $env:Path = "$shim;$env:Path"
+}
+
+# sccache for dev builds (configs/common/mozconfig reads JESSNIX_SCCACHE). winget
+# puts it in its Links folder, which a shell opened before the install lacks.
+$sccache = Get-Command sccache -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Source
+if (-not $sccache) {
+    $sccache = @(
+        "$env:LOCALAPPDATA\Microsoft\WinGet\Links\sccache.exe"
+        "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\Mozilla.sccache_*\*\sccache.exe"
+        "$env:USERPROFILE\.mozbuild\sccache\sccache.exe"
+    ) | ForEach-Object { Get-Item $_ -ErrorAction SilentlyContinue } | Select-Object -First 1 -ExpandProperty FullName
+}
+if ($sccache) {
+    $env:JESSNIX_SCCACHE = $sccache -replace '\\', '/'
+    # A Firefox build is bigger than sccache's 10 GB default.
+    if (-not $env:SCCACHE_CACHE_SIZE) { $env:SCCACHE_CACHE_SIZE = '30G' }
+}
 
 # surfer keeps the Firefox source in its own git repo (engine/) and commits it as
 # the base its patches are measured against. That commit needs an author: use this
@@ -159,6 +187,17 @@ switch ($Step) {
     'build'     { Set-BuildMode dev; Invoke-Build 'build' 'build' }
     'ui'        { Set-BuildMode dev; Invoke-Build 'build:ui' 'build faster' }
     'release'   { Set-BuildMode release; Invoke-Build 'build' 'build' }
+    # Quick C++/Rust rebuild after a first `build`: skips the tiers that only
+    # matter when build files or the interface change. `cpp <dir>` rebuilds
+    # that source folder (e.g. dom/base) first, then relinks.
+    'cpp'       {
+        Set-BuildMode dev
+        & $selectBrand
+        $env:MAR_CHANNEL_ID = $brand
+        $env:ACCEPTED_MAR_CHANNEL_IDS = $brand
+        if ($Rest) { Invoke-Step "python3 mach build $($Rest -join ' ')" $engine }
+        Invoke-Step 'python3 mach build binaries' $engine
+    }
     'package'   {
         # Same mode as the last build, or mach would see a changed mozconfig and
         # reconfigure. surfer remembers the mode in .surfer/.
@@ -205,7 +244,10 @@ switch ($Step) {
         # profile kept there (mach run's default).
         $devProfile = Join-Path $Repo '.profiles\dev'
         New-Item -ItemType Directory -Force $devProfile | Out-Null
-        Invoke-Step "python3 mach run --profile `"$devProfile`"" $engine
+        # -purgecaches: the profile caches the browser window's markup and
+        # scripts, and `ui` doesn't change the build ID that would clear it, so
+        # without this a `ui` build's changes don't show.
+        Invoke-Step "python3 mach run --profile `"$devProfile`" -- -purgecaches" $engine
     }
     default     { Invoke-Step "npm run $Step$extra" }
 }

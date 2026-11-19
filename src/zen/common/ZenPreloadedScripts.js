@@ -29,6 +29,8 @@
     "chrome://browser/content/zen-components/ZenDownloadAnimation.mjs",
     "resource:///modules/zen/share/ZenShareManager.mjs",
     "chrome://browser/content/zen-components/JessnixPersonalize.mjs",
+    "chrome://browser/content/zen-components/JessnixTopTabs.mjs",
+    "chrome://browser/content/zen-components/JessnixTogether.mjs",
   ];
 
   for (let script of scripts) {

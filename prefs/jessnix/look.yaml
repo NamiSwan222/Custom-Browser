@@ -19,3 +19,8 @@
 # How strongly a chosen background image shows (30 subtle, 60 balanced, 90 strong).
 - name: jessnix.personalize.background-strength
   value: 60
+
+# Tabs in a row on top, as in Chrome (true), or in Zen's sidebar (false).
+# Applied by src/zen/jessnix/JessnixTopTabs.mjs and jessnix-top-tabs.css.
+- name: jessnix.tabs.top
+  value: true
