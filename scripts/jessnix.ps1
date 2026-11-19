@@ -169,6 +169,7 @@ switch ($Step) {
         # past a failed step, so they run one at a time here.
         Invoke-Step 'npm run download'
         Invoke-Step 'python3 scripts\fetch_ublock.py'
+        Invoke-Step 'python3 scripts\fetch_hebrew.py'
         Invoke-Step 'npm run import'
         Invoke-Step 'python3 scripts\jessnix_brand_terms.py'
         & $bootstrap
@@ -179,6 +180,8 @@ switch ($Step) {
     'import'    {
         & $selectBrand
         Invoke-Step 'python3 scripts\fetch_ublock.py'
+        # Hebrew language pack and spell-checking dictionary.
+        Invoke-Step 'python3 scripts\fetch_hebrew.py'
         Invoke-Step 'npm run import'
         # Brand names surfer's branding template leaves out.
         Invoke-Step 'python3 scripts\jessnix_brand_terms.py'

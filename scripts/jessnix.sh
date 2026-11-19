@@ -53,6 +53,7 @@ case "$STEP" in
   init)
     npm run download
     python3 scripts/fetch_ublock.py
+    python3 scripts/fetch_hebrew.py
     npm run import
     python3 scripts/jessnix_brand_terms.py
     (cd "$ENGINE" && ./mach --no-interactive bootstrap --application-choice browser)
@@ -61,6 +62,7 @@ case "$STEP" in
   import)
     brand
     python3 scripts/fetch_ublock.py
+    python3 scripts/fetch_hebrew.py
     npm run import
     python3 scripts/jessnix_brand_terms.py
     python3 scripts/update_en_US_packs.py

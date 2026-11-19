@@ -103,7 +103,7 @@ Zen already turns off Mozilla telemetry, studies and crash-report sending (`pref
 - [x] Bookmarks: the star in the address bar is back (Zen hid it) and the bookmarks bar shows on every page
 - [x] Release build (`scripts/jessnix.ps1 release`: Zen release settings, thin LTO; 31 min clean). Switching between dev and release clears the old build output (the wrapper does it)
 - [x] Faster dev builds: sccache used locally (Zen only turned it on in CI), no debug symbols and no test code in dev builds, `jessnix.ps1 cpp [dir]` for quick C++/Rust rebuilds, and `start` clears the profile's startup cache so `ui` changes show
-- [ ] Hebrew language pack and spellcheck included
+- [x] Hebrew language pack and spellcheck included (`scripts/fetch_hebrew.py`)
 - [ ] Tab unloading on, hardware video decode confirmed
 - [ ] Bookmark/password import from Chrome/Edge works
 - [x] Updates: from GitHub Releases (Phase 12)
@@ -171,7 +171,7 @@ Each phase is usable on its own. ✋ marks what needs the owner (a test on real 
 - [x] **Throwaway tabs:** "Open link in a throwaway tab" and a palette action; each in its own temporary container, deleted with everything it stored when its last tab closes
 - [x] **Screenshot + notes:** Firefox's screenshot in the palette; a notes panel per site
 - [x] **RTL/LTR:** Firefox's "Switch Text Direction" in text box menus (on), Ctrl+Shift+X, and in the palette
-- [ ] ✋ Hebrew language pack and spellcheck: install them from addons.mozilla.org (Firefox 160 language pack, Hebrew dictionary)
+- [x] Hebrew language pack and spellcheck: bundled like uBlock Origin (`scripts/fetch_hebrew.py`, pinned checksums; Mozilla-signed): the Firefox 160.0 language pack (Settings > General > Language) and the HSpell dictionary. Tested: both install, Hebrew is offered as a language and for spellcheck. On a Firefox update, update the language pack in that script
 
 ### Phase 10: Browse Together 2.0
 - [x] **Voice chat:** the microphone as 16 kHz samples over the room's own connection, played with Web Audio (no WebRTC: nothing to discover through VPNs; streamed media playback in the browser's own process crashed it)
@@ -196,7 +196,7 @@ Firefox already runs Chrome's extension format (WebExtensions, with the `chrome.
 - [x] **Updates** from GitHub Releases: a daily check of `jessnix.update.repo`; a bar offers to download and run the installer (asking first)
 - [ ] ✋ **Code signing:** `jessnix.ps1 package` signs the installer when `JESSNIX_SIGN_CERT` points at a code-signing certificate (.pfx); buying one is the owner's
 - [x] **Settings backup:** Settings > Personalize > "Back up all my settings" / "Restore settings": every setting, saved looks and images in one `.cbsettings` file. Live sync between PCs is later
-- [ ] ✋ **Linux build:** `scripts/jessnix.sh` (init, build, ui, cpp, release, package, start); needs a Linux machine to run and test
+- [ ] ✋ **Linux build:** `scripts/jessnix.sh` (init, build, ui, cpp, release, package, start); needs a Linux machine (this PC has no WSL Linux installed) to run and test
 - [ ] ✋ **Release automation:** `.github/workflows/release.yml` for a self-hosted Windows runner (release build, installer, optional signing, GitHub release); registering the runner on the owner's PC is the owner's
 
 ---
