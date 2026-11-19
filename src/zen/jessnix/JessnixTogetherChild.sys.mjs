@@ -208,7 +208,10 @@ export class JessnixTogetherChild extends JSWindowActorChild {
         if (!media) {
           return;
         }
-        this.#applyingMediaUntil = Date.now() + ECHO_GUARD_MS;
+        // "relay": the host's "Play for everyone"; that play goes out to the room.
+        if (!data.relay) {
+          this.#applyingMediaUntil = Date.now() + ECHO_GUARD_MS;
+        }
         if (typeof data.time === "number" && Math.abs(media.currentTime - data.time) > 0.6) {
           media.currentTime = data.time;
         }

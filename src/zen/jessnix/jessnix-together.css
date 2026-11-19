@@ -364,3 +364,39 @@
   background: var(--zen-primary-color, #4dabf7);
   box-shadow: 0 0 0 1.5px var(--toolbar-bgcolor, #222);
 }
+
+/* Together 2.0: small buttons in rows, the shared board. */
+.jessnix-together-small {
+  padding: 2px 8px !important;
+  font-size: 0.85em;
+  margin-inline-start: auto;
+}
+
+.jessnix-together-board-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, currentColor 5%, transparent);
+
+  & > :nth-child(2) {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.jessnix-together-done {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+/* Lightened accent, readable on a dark or light panel. */
+.jessnix-together-link {
+  color: color-mix(in srgb, var(--zen-primary-color, LinkText), white 45%);
+  text-decoration: underline;
+  cursor: pointer;
+}

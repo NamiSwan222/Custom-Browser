@@ -41,6 +41,24 @@ const PREF_PORT = "jessnix.together.port";
 const PREF_ACTIVE = "jessnix.together.active";
 // Set once the button has been put on the toolbar, so removing it sticks.
 const PREF_BUTTON_PLACED = "jessnix.together.button-placed";
+// Remember friends: the last room joined, saved friends, and (host) the same
+// room code every time.
+const PREF_LAST_ROOM = "jessnix.together.last-room";
+const PREF_FRIENDS = "jessnix.together.friends";
+const PREF_KEEP_CODE = "jessnix.together.keep-code";
+const PREF_SAVED_CODE = "jessnix.together.code";
+// Voice: 16 kHz mono 16-bit samples (about 32 KB/s per speaker), played a
+// little behind real time to smooth out the network.
+const VOICE_RATE = 16000;
+const VOICE_DELAY_S = 0.12;
+// Refusal reasons travel as an id (for this browser's strings) and as text
+// (for older versions).
+const REJECT_IDS = {
+  version: "jessnix-together-reject-version",
+  code: "jessnix-together-reject-code",
+  declined: "jessnix-together-reject-declined",
+  ended: "jessnix-together-reject-ended",
+};
 
 const BUTTON_ID = "jessnix-together-button";
 const HTML_NS = "http://www.w3.org/1999/xhtml";
@@ -200,8 +218,23 @@ class nsJessnixTogether {
   #progressListener = null;
   #tabEvents = null;
 
+  // 2.0: voice, watch party, shared board, a guest driving, friends.
+  voice = { on: false, muted: false, stream: null, capture: null };
+  #voiceIn = new Map(); // speaker id -> { next, received }
+  #playContext = null;
+  talking = new Set();
+  party = false;
+  readyCheck = false;
+  ready = new Set();
+  iAmReady = false;
+  board = [];
+  #nextBoardId = 1;
+  driver = null;
+  #joinTarget = null; // { address, port, code } of the room joined
+
   init() {
     // The page actor is registered at startup (ZenActorsManager.sys.mjs).
+    document.l10n.addResourceIds(["browser/jessnix-together.ftl"]);
     this.me.name = cleanName(Services.prefs.getStringPref(PREF_NAME, ""));
     if (!this.#otherWindowSession()) {
       Services.prefs.setBoolPref(PREF_ACTIVE, false);
@@ -248,6 +281,7 @@ class nsJessnixTogether {
         CUI.createWidget({
           id: BUTTON_ID,
           type: "button",
+          l10nId: "jessnix-together-button",
           label: "Browse Together",
           tooltiptext: "Browse Together: browse with friends on your network",
           defaultArea: CUI.AREA_NAVBAR,
@@ -336,7 +370,11 @@ class nsJessnixTogether {
       if (value === undefined || value === null || value === false) {
         continue;
       }
-      if (key === "class") {
+      if (key === "l10n") {
+        document.l10n.setAttributes(el, value, props.args || undefined);
+      } else if (key === "args") {
+        continue;
+      } else if (key === "class") {
         el.className = value;
       } else if (key.startsWith("on")) {
         el.addEventListener(key.slice(2), value);
@@ -359,20 +397,20 @@ class nsJessnixTogether {
     return el;
   }
 
-  #toggle(label, checked, onChange) {
+  #toggle(l10n, checked, onChange) {
     const input = this.#el("input", { type: "checkbox" });
     input.checked = checked;
     input.addEventListener("change", () => onChange(input.checked));
-    return this.#el("label", { class: "jessnix-together-toggle" }, input, label);
+    return this.#el("label", { class: "jessnix-together-toggle" }, input, this.#el("span", { l10n }));
   }
 
-  #person(person, extra) {
+  #person(person, extras = []) {
     return this.#el(
       "div",
       { class: "jessnix-together-person" },
       this.#el("span", { class: "jessnix-together-dot", style: `background:${person.color}` }),
       this.#el("span", { text: person.name }),
-      extra ? this.#el("span", { class: "jessnix-together-muted", text: extra }) : null
+      extras
     );
   }
 
@@ -382,14 +420,18 @@ class nsJessnixTogether {
       return;
     }
     const focused = document.activeElement;
-    const draft = body.querySelector(".jessnix-together-chat-input")?.value || "";
-    const hadChatFocus = focused?.classList?.contains("jessnix-together-chat-input");
+    const drafts = {};
+    for (const input of body.querySelectorAll("input[data-keep]")) {
+      drafts[input.dataset.keep] = input.value;
+    }
+    const keepFocus = focused?.dataset?.keep;
     body.replaceChildren(...this.#renderBody().filter(Boolean));
-    const chatInput = body.querySelector(".jessnix-together-chat-input");
-    if (chatInput) {
-      chatInput.value = draft;
-      if (hadChatFocus) {
-        chatInput.focus();
+    for (const input of body.querySelectorAll("input[data-keep]")) {
+      if (drafts[input.dataset.keep] !== undefined) {
+        input.value = drafts[input.dataset.keep];
+      }
+      if (keepFocus && input.dataset.keep === keepFocus) {
+        input.focus();
       }
     }
     const log = body.querySelector(".jessnix-together-chat-log");
@@ -399,17 +441,17 @@ class nsJessnixTogether {
   }
 
   #renderBody() {
-    const out = [this.#el("h2", { class: "jessnix-together-title", text: "Browse Together" })];
+    const out = [this.#el("h2", { class: "jessnix-together-title", l10n: "jessnix-together-title" })];
     if (this.isPrivate) {
-      out.push(this.#el("p", { class: "jessnix-together-muted", text: "Not available in private windows." }));
+      out.push(this.#el("p", { class: "jessnix-together-muted", l10n: "jessnix-together-private" }));
       return out;
     }
     if (!this.inSession && this.#otherWindowSession()) {
-      out.push(this.#el("p", { class: "jessnix-together-muted", text: "A Together session is running in another window." }));
+      out.push(this.#el("p", { class: "jessnix-together-muted", l10n: "jessnix-together-other-window" }));
       return out;
     }
     if (this.status) {
-      out.push(this.#el("p", { class: "jessnix-together-status", text: this.status }));
+      out.push(this.#el("p", { class: "jessnix-together-status", l10n: this.status.id, args: this.status.args }));
     }
     if (!this.inSession) {
       out.push(...this.#renderLobby());
@@ -422,23 +464,49 @@ class nsJessnixTogether {
   }
 
   #renderLobby() {
-    const nameInput = this.#el("input", { type: "text", maxlength: "24", placeholder: "Your name" });
+    const nameInput = this.#el("input", { type: "text", maxlength: "24", l10n: "jessnix-together-name", "data-keep": "name" });
     nameInput.value = this.me.name === "Friend" ? "" : this.me.name;
     nameInput.addEventListener("change", () => {
       this.me.name = cleanName(nameInput.value);
       Services.prefs.setStringPref(PREF_NAME, this.me.name);
     });
-    const address = this.#el("input", { type: "text", placeholder: "Host address, e.g. 26.12.34.56" });
-    const code = this.#el("input", { type: "text", maxlength: "4", placeholder: "Code", class: "jessnix-together-code" });
+    const address = this.#el("input", { type: "text", l10n: "jessnix-together-address", "data-keep": "address" });
+    const code = this.#el("input", { type: "text", maxlength: "4", l10n: "jessnix-together-code", class: "jessnix-together-code", "data-keep": "code" });
     const join = () => this.join(address.value, code.value);
     code.addEventListener("keydown", e => e.key === "Enter" && join());
+    const fill = (target, focusCode = true) => {
+      address.value = target.port === DEFAULT_PORT ? target.address : `${target.address}:${target.port}`;
+      if (target.code) {
+        code.value = target.code;
+      }
+      if (focusCode) {
+        code.focus();
+      }
+    };
 
     const now = Date.now();
     const rooms = [...this.foundHosts.values()].filter(h => now - h.seen < FOUND_HOST_TTL_MS);
+    const last = this.lastRoom;
+    const friends = this.friends;
     return [
-      this.#el("div", { class: "jessnix-together-row" }, this.#el("span", { class: "jessnix-together-label", text: "Name" }), nameInput),
-      this.#el("button", { class: "jessnix-together-primary", text: "Host a room", onclick: () => this.host() }),
-      this.#el("h3", { text: "Join a room" }),
+      this.#el(
+        "div",
+        { class: "jessnix-together-row" },
+        this.#el("span", { class: "jessnix-together-label", l10n: "jessnix-together-name-label" }),
+        nameInput
+      ),
+      this.#el("button", { class: "jessnix-together-primary", l10n: "jessnix-together-host", onclick: () => this.host() }),
+      this.#toggle("jessnix-together-keep-code", Services.prefs.getBoolPref(PREF_KEEP_CODE, false), value =>
+        Services.prefs.setBoolPref(PREF_KEEP_CODE, value)
+      ),
+      this.#el("h3", { l10n: "jessnix-together-join-header" }),
+      last
+        ? this.#el("button", {
+            l10n: "jessnix-together-rejoin",
+            args: { name: last.name },
+            onclick: () => this.join(last.port === DEFAULT_PORT ? last.address : `${last.address}:${last.port}`, last.code),
+          })
+        : null,
       rooms.length
         ? this.#el(
             "div",
@@ -447,34 +515,65 @@ class nsJessnixTogether {
               this.#el(
                 "div",
                 { class: "jessnix-together-room" },
-                this.#el("span", { text: `${room.name}'s room` }),
+                this.#el("span", { l10n: "jessnix-together-room-name", args: { name: room.name } }),
                 this.#el("span", {
                   class: "jessnix-together-muted",
-                  text: `${networkName(room.address)} · ${room.address} · ${room.guests} in`,
+                  l10n: "jessnix-together-room-details",
+                  args: { network: networkName(room.address), address: room.address, guests: room.guests },
                 }),
-                this.#el("button", {
-                  text: "Use",
-                  onclick: () => {
-                    address.value = room.port === DEFAULT_PORT ? room.address : `${room.address}:${room.port}`;
-                    code.focus();
-                  },
-                })
+                this.#el("button", { l10n: "jessnix-together-use", onclick: () => fill(room) })
               )
             )
           )
-        : this.#el("p", { class: "jessnix-together-muted", text: "Looking for rooms on your network…" }),
-      this.#el("div", { class: "jessnix-together-row" }, address, code, this.#el("button", { text: "Join", onclick: join })),
-      this.#el("p", {
-        class: "jessnix-together-muted",
-        text: "Only page addresses are shared, never your logins or cookies. Works on the same network or a VPN like Radmin.",
-      }),
+        : this.#el("p", { class: "jessnix-together-muted", l10n: "jessnix-together-looking" }),
+      friends.length ? this.#el("h3", { l10n: "jessnix-together-friends-header" }) : null,
+      friends.length
+        ? this.#el(
+            "div",
+            { class: "jessnix-together-list" },
+            friends.map(friend =>
+              this.#el(
+                "div",
+                { class: "jessnix-together-room" },
+                this.#el("span", { text: friend.name }),
+                this.#el("span", { class: "jessnix-together-muted", text: friend.address }),
+                this.#el("button", { l10n: "jessnix-together-use", onclick: () => fill(friend) }),
+                this.#el("button", { l10n: "jessnix-together-remove", onclick: () => this.removeFriend(friend) })
+              )
+            )
+          )
+        : null,
+      this.#el("div", { class: "jessnix-together-row" }, address, code, this.#el("button", { l10n: "jessnix-together-join", onclick: join })),
+      this.#el("p", { class: "jessnix-together-muted", l10n: "jessnix-together-privacy-note" }),
     ];
   }
 
   #peopleList() {
-    const list = [this.#person(this.me, this.role === "host" ? "you, host" : "you")];
+    const extras = person => {
+      const out = [];
+      if (person.id === this.me.id) {
+        out.push(this.#el("span", { class: "jessnix-together-muted", l10n: this.role === "host" ? "jessnix-together-you-host" : "jessnix-together-you" }));
+      } else if (person.isHost) {
+        out.push(this.#el("span", { class: "jessnix-together-muted", l10n: "jessnix-together-host-label" }));
+      }
+      if (this.talking.has(person.id)) {
+        out.push(this.#el("span", { l10n: "jessnix-together-talking" }));
+      }
+      if (this.driver && this.driver === person.id) {
+        out.push(this.#el("span", { class: "jessnix-together-muted", l10n: "jessnix-together-driving" }));
+      }
+      if (this.role === "host" && person.id !== this.me.id) {
+        out.push(
+          this.driver === person.id
+            ? this.#el("button", { class: "jessnix-together-small", l10n: "jessnix-together-take-back", onclick: () => this.setDriver(null) })
+            : this.#el("button", { class: "jessnix-together-small", l10n: "jessnix-together-let-drive", onclick: () => this.setDriver(person.id) })
+        );
+      }
+      return out;
+    };
+    const list = [this.#person(this.me, extras(this.me))];
     for (const peer of this.peers.values()) {
-      list.push(this.#person(peer, peer.isHost ? "host" : ""));
+      list.push(this.#person(peer, extras(peer)));
     }
     return this.#el("div", { class: "jessnix-together-list" }, list);
   }
@@ -485,7 +584,7 @@ class nsJessnixTogether {
       { class: "jessnix-together-chat-log" },
       this.chat.map(line =>
         line.system
-          ? this.#el("div", { class: "jessnix-together-chat-system", text: line.text })
+          ? this.#el("div", { class: "jessnix-together-chat-system", l10n: line.id, args: line.args })
           : this.#el(
               "div",
               { class: "jessnix-together-chat-line" },
@@ -494,14 +593,140 @@ class nsJessnixTogether {
             )
       )
     );
-    const input = this.#el("input", { type: "text", class: "jessnix-together-chat-input", placeholder: "Message", maxlength: "500" });
+    const input = this.#el("input", {
+      type: "text",
+      class: "jessnix-together-chat-input",
+      l10n: "jessnix-together-message",
+      maxlength: "500",
+      "data-keep": "chat",
+    });
     input.addEventListener("keydown", e => {
       if (e.key === "Enter" && input.value.trim()) {
         this.sendChat(input.value);
         input.value = "";
       }
     });
-    return [this.#el("h3", { text: "Chat" }), log, input];
+    return [this.#el("h3", { l10n: "jessnix-together-chat" }), log, input];
+  }
+
+  #renderVoice() {
+    return [
+      this.#el("h3", { l10n: "jessnix-together-voice-header" }),
+      this.#el(
+        "div",
+        { class: "jessnix-together-row" },
+        this.#el("button", {
+          l10n: this.voice.on ? "jessnix-together-voice-leave" : "jessnix-together-voice-join",
+          onclick: () => (this.voice.on ? this.stopVoice() : this.startVoice()),
+        }),
+        this.voice.on
+          ? this.#el("button", {
+              l10n: this.voice.muted ? "jessnix-together-unmute" : "jessnix-together-mute",
+              onclick: () => this.setMuted(!this.voice.muted),
+            })
+          : null
+      ),
+    ];
+  }
+
+  #renderParty() {
+    const out = [this.#el("h3", { l10n: "jessnix-together-party-header" })];
+    if (this.role === "host") {
+      out.push(this.#toggle("jessnix-together-party-toggle", this.party, value => this.setParty(value)));
+      out.push(
+        this.#el(
+          "div",
+          { class: "jessnix-together-row" },
+          this.#el("button", { l10n: "jessnix-together-ready-check", onclick: () => this.startReadyCheck() }),
+          this.readyCheck
+            ? this.#el("span", {
+                class: "jessnix-together-muted",
+                l10n: "jessnix-together-ready-count",
+                args: { ready: this.ready.size, total: this.peers.size },
+              })
+            : null,
+          this.#el("button", { l10n: "jessnix-together-play-all", onclick: () => this.playForEveryone() })
+        )
+      );
+    } else {
+      if (this.party) {
+        out.push(this.#el("p", { class: "jessnix-together-muted", l10n: "jessnix-together-party-on" }));
+      }
+      if (this.readyCheck) {
+        out.push(this.#el("p", { l10n: "jessnix-together-ready-asked" }));
+        out.push(this.#el("button", { class: "jessnix-together-primary", l10n: "jessnix-together-im-ready", disabled: this.iAmReady || null, onclick: () => this.sendReady() }));
+      }
+    }
+    return out.length > 1 ? out : [];
+  }
+
+  #renderBoard() {
+    const input = this.#el("input", { type: "text", maxlength: "300", l10n: "jessnix-together-board-input", "data-keep": "board" });
+    const add = () => {
+      if (input.value.trim()) {
+        this.boardOp({ op: "add", kind: "todo", text: input.value.trim() });
+        input.value = "";
+      }
+    };
+    input.addEventListener("keydown", e => e.key === "Enter" && add());
+    return [
+      this.#el("h3", { l10n: "jessnix-together-board" }),
+      this.board.length
+        ? this.#el(
+            "div",
+            { class: "jessnix-together-list jessnix-together-board" },
+            this.board.map(item => {
+              const check =
+                item.kind === "todo"
+                  ? (() => {
+                      const box = this.#el("input", { type: "checkbox" });
+                      box.checked = !!item.done;
+                      box.addEventListener("change", () => this.boardOp({ op: "toggle", id: item.id }));
+                      return box;
+                    })()
+                  : null;
+              const label =
+                item.kind === "link"
+                  ? this.#el("a", {
+                      class: "jessnix-together-link",
+                      text: item.text || item.url,
+                      href: item.url,
+                      onclick: event => {
+                        event.preventDefault();
+                        if (isWebURL(item.url)) {
+                          openTrustedLinkIn(item.url, "tab");
+                        }
+                      },
+                    })
+                  : this.#el("span", { class: item.done ? "jessnix-together-done" : "", text: item.text });
+              return this.#el(
+                "div",
+                { class: "jessnix-together-board-item" },
+                check,
+                label,
+                this.#el("span", { class: "jessnix-together-muted", text: item.by || "" }),
+                this.#el("button", { class: "jessnix-together-small", text: "×", onclick: () => this.boardOp({ op: "remove", id: item.id }) })
+              );
+            })
+          )
+        : this.#el("p", { class: "jessnix-together-muted", l10n: "jessnix-together-board-empty" }),
+      this.#el(
+        "div",
+        { class: "jessnix-together-row" },
+        input,
+        this.#el("button", { l10n: "jessnix-together-add-todo", onclick: add })
+      ),
+      this.#el("button", {
+        l10n: "jessnix-together-add-page",
+        onclick: () => {
+          const tab = gBrowser.selectedTab;
+          const url = tab.linkedBrowser.currentURI?.spec;
+          if (isWebURL(url)) {
+            this.boardOp({ op: "add", kind: "link", text: String(tab.label || "").slice(0, 200), url });
+          }
+        },
+      }),
+    ];
   }
 
   #renderShareControls() {
@@ -511,16 +736,16 @@ class nsJessnixTogether {
       const shared = tab.hasAttribute("jessnix-together-shared");
       out.push(
         this.#el("button", {
-          text: shared ? "Stop sharing this tab" : "Share this tab",
+          l10n: shared ? "jessnix-together-stop-share-tab" : "jessnix-together-share-tab",
           disabled: this.shareAll || null,
           onclick: () => this.setTabShared(tab, !shared),
         }),
-        this.#toggle("Share all my tabs", this.shareAll, value => {
+        this.#toggle("jessnix-together-share-all", this.shareAll, value => {
           this.shareAll = value;
           this.#scheduleTabs();
           this.render();
         }),
-        this.#toggle("Pause sharing", this.isPaused, value => {
+        this.#toggle("jessnix-together-pause", this.isPaused, value => {
           this.isPaused = value;
           this.#scheduleTabs();
           this.render();
@@ -528,16 +753,13 @@ class nsJessnixTogether {
       );
     } else {
       out.push(
-        this.#toggle("Follow the host", this.follow, value => this.setFollow(value)),
-        this.#el("button", {
-          text: "Share this tab with the room",
-          onclick: () => this.shareTabAsGuest(tab),
-        })
+        this.#toggle("jessnix-together-follow", this.follow, value => this.setFollow(value)),
+        this.#el("button", { l10n: "jessnix-together-guest-share", onclick: () => this.shareTabAsGuest(tab) })
       );
     }
     out.push(
       this.#el("button", {
-        text: this.isShowingView ? "Stop showing my tab live" : "Show my tab live",
+        l10n: this.isShowingView ? "jessnix-together-stop-live" : "jessnix-together-show-live",
         onclick: () => (this.isShowingView ? this.stopView() : this.startView()),
       })
     );
@@ -550,14 +772,15 @@ class nsJessnixTogether {
       this.#el(
         "div",
         { class: "jessnix-together-roominfo" },
-        this.#el("div", { text: "Room code" }),
+        this.#el("div", { l10n: "jessnix-together-room-code" }),
         this.#el("div", { class: "jessnix-together-bigcode", text: this.#code }),
-        this.#el("div", {
-          class: "jessnix-together-muted",
-          text: this.#addresses.length
-            ? `Your address: ${this.#addresses.map(a => (this.port === DEFAULT_PORT ? a : `${a}:${this.port}`)).join("  or  ")}`
-            : "No network address found: check you are on a LAN or VPN.",
-        })
+        this.#addresses.length
+          ? this.#el("div", {
+              class: "jessnix-together-muted",
+              l10n: "jessnix-together-your-address",
+              args: { addresses: this.#addresses.map(a => (this.port === DEFAULT_PORT ? a : `${a}:${this.port}`)).join("  /  ") },
+            })
+          : this.#el("div", { class: "jessnix-together-muted", l10n: "jessnix-together-no-address" })
       ),
       pending.length
         ? this.#el(
@@ -567,36 +790,47 @@ class nsJessnixTogether {
               this.#el(
                 "div",
                 { class: "jessnix-together-room" },
-                this.#el("span", { text: `${guest.name} wants to join` }),
+                this.#el("span", { l10n: "jessnix-together-wants-to-join", args: { name: guest.name } }),
                 this.#el("span", { class: "jessnix-together-muted", text: guest.conn.peerAddress }),
-                this.#el("button", { class: "jessnix-together-primary", text: "Accept", onclick: () => this.approve(id) }),
-                this.#el("button", { text: "Decline", onclick: () => this.decline(id) })
+                this.#el("button", { class: "jessnix-together-primary", l10n: "jessnix-together-accept", onclick: () => this.approve(id) }),
+                this.#el("button", { l10n: "jessnix-together-decline", onclick: () => this.decline(id) })
               )
             )
           )
         : null,
-      this.#el("h3", { text: "People" }),
+      this.#el("h3", { l10n: "jessnix-together-people" }),
       this.#peopleList(),
       this.#renderShareControls(),
+      ...this.#renderVoice(),
+      ...this.#renderParty(),
+      ...this.#renderBoard(),
       ...this.#renderChat(),
-      this.#el("button", { class: "jessnix-together-danger", text: "End room", onclick: () => this.leave() }),
+      this.#el("button", { class: "jessnix-together-danger", l10n: "jessnix-together-end-room", onclick: () => this.leave() }),
     ];
   }
 
   #renderGuest() {
     if (this.isWaiting) {
       return [
-        this.#el("p", { text: "Waiting for the host to let you in…" }),
-        this.#el("button", { text: "Cancel", onclick: () => this.leave() }),
+        this.#el("p", { l10n: "jessnix-together-waiting" }),
+        this.#el("button", { l10n: "jessnix-together-cancel", onclick: () => this.leave() }),
       ];
     }
+    const isFriend = this.friends.some(f => f.address === this.#joinTarget?.address);
     return [
-      this.#el("p", { text: `In ${this.hostName}'s room` }),
-      this.#el("h3", { text: "People" }),
+      this.#el("p", { l10n: "jessnix-together-in-room", args: { name: this.hostName } }),
+      this.driver === this.me.id ? this.#el("p", { class: "jessnix-together-status", l10n: "jessnix-together-you-drive" }) : null,
+      this.#el("h3", { l10n: "jessnix-together-people" }),
       this.#peopleList(),
       this.#renderShareControls(),
+      ...this.#renderVoice(),
+      ...this.#renderParty(),
+      ...this.#renderBoard(),
       ...this.#renderChat(),
-      this.#el("button", { class: "jessnix-together-danger", text: "Leave room", onclick: () => this.leave() }),
+      isFriend
+        ? null
+        : this.#el("button", { l10n: "jessnix-together-save-friend", args: { name: this.hostName }, onclick: () => this.saveFriend() }),
+      this.#el("button", { class: "jessnix-together-danger", l10n: "jessnix-together-leave", onclick: () => this.leave() }),
     ];
   }
 
@@ -645,12 +879,18 @@ class nsJessnixTogether {
       this.#server.start();
     } catch (e) {
       this.#server = null;
-      this.status = `Can't open port ${this.port}: another program may be using it.`;
+      this.status = { id: "jessnix-together-status-port", args: { port: this.port } };
       this.render();
       return;
     }
     this.role = "host";
-    this.#code = randomCode();
+    const saved = Services.prefs.getStringPref(PREF_SAVED_CODE, "");
+    this.#code =
+      Services.prefs.getBoolPref(PREF_KEEP_CODE, false) && /^[A-Z2-9]{4}$/.test(saved) ? saved : randomCode();
+    Services.prefs.setStringPref(PREF_SAVED_CODE, this.#code);
+    this.board = [];
+    this.party = false;
+    this.driver = null;
     this.me = { id: "h", name: this.me.name, color: COLORS[0] };
     this.peers.clear();
     this.chat = [];
@@ -667,7 +907,7 @@ class nsJessnixTogether {
     }, ANNOUNCE_MS);
     // Start by sharing the tab in front.
     this.setTabShared(gBrowser.selectedTab, true);
-    this.#systemLine(`Room open. Code ${this.#code}.`);
+    this.#systemLine("jessnix-together-line-open", { code: this.#code });
     this.render();
   }
 
@@ -692,18 +932,18 @@ class nsJessnixTogether {
         return;
       }
       if (message.v !== TOGETHER_VERSION) {
-        guest.conn.send({ t: "reject", reason: "Your browser's Together version doesn't match the host's." });
+        guest.conn.send({ t: "reject", reasonId: "version", reason: "Your browser's Together version doesn't match the host's." });
         guest.conn.close("version");
         return;
       }
       if (String(message.code || "").toUpperCase() !== this.#code) {
-        guest.conn.send({ t: "reject", reason: "Wrong room code." });
+        guest.conn.send({ t: "reject", reasonId: "code", reason: "Wrong room code." });
         guest.conn.close("code");
         return;
       }
       guest.name = cleanName(message.name);
       this.#guests.set(guest.id, guest);
-      this.#notify(`${guest.name} wants to join your room.`);
+      this.#notify("jessnix-together-toast-wants", { name: guest.name });
       this.#updateButton();
       this.render();
       return;
@@ -726,12 +966,41 @@ class nsJessnixTogether {
             inBackground: true,
           });
           this.setTabShared(tab, true);
-          this.#systemLine(`${guest.name} shared a tab.`);
+          this.#systemLine("jessnix-together-line-shared", { name: guest.name });
         }
         break;
       case "page":
+        // Watch party: only the host (or the driver) controls videos.
+        if (message.kind === "media" && this.party && guest.id !== this.driver) {
+          break;
+        }
         this.#onPage({ ...message, from: guest.id });
         this.#relay(guest.id, { ...message, from: guest.id });
+        break;
+      case "voice":
+        this.#playVoice(guest.id, message.data);
+        this.#relay(guest.id, { t: "voice", from: guest.id, data: message.data });
+        break;
+      case "voice-state":
+        this.#onVoiceState(guest.id, !!message.on);
+        this.#relay(guest.id, { t: "voice-state", from: guest.id, on: !!message.on });
+        break;
+      case "ready":
+        if (this.readyCheck) {
+          this.ready.add(guest.id);
+          this.render();
+        }
+        break;
+      case "board-op":
+        this.#applyBoardOp(message.op, guest.name);
+        break;
+      case "select":
+        if (guest.id === this.driver) {
+          const tab = this.#tabById(message.tabId);
+          if (tab && this.#isShared(tab)) {
+            gBrowser.selectedTab = tab;
+          }
+        }
         break;
       case "view":
       case "viewstop":
@@ -757,9 +1026,16 @@ class nsJessnixTogether {
       host: { id: this.me.id, name: this.me.name, color: this.me.color },
       peers: this.#peerList(),
       ...this.#tabsState(),
+      board: this.board,
+      party: this.party,
+      driver: this.driver,
+      talking: [...this.talking],
     });
     this.#broadcast({ t: "peers", list: this.#peerList() });
-    this.#systemLine(`${guest.name} joined.`);
+    // Speakers restart their recording so the newcomer gets a stream header.
+    this.#broadcast({ t: "voice-restart" });
+    this.#restartVoice();
+    this.#systemLine("jessnix-together-line-joined", { name: guest.name });
     this.#updateButton();
     this.render();
   }
@@ -769,15 +1045,23 @@ class nsJessnixTogether {
     if (!guest) {
       return;
     }
-    guest.conn.send({ t: "reject", reason: "The host declined." });
+    guest.conn.send({ t: "reject", reasonId: "declined", reason: "The host declined." });
     guest.conn.close("declined");
   }
 
   #onGuestGone(guest) {
     this.#guests.delete(guest.id);
     if (this.peers.delete(guest.id)) {
-      this.#systemLine(`${guest.name} left.`);
+      this.#systemLine("jessnix-together-line-left", { name: guest.name });
       this.#broadcast({ t: "peers", list: this.#peerList() });
+    }
+    if (this.talking.delete(guest.id)) {
+      this.#relay(guest.id, { t: "voice-state", from: guest.id, on: false });
+    }
+    this.#stopVoiceIn(guest.id);
+    this.ready.delete(guest.id);
+    if (this.driver === guest.id) {
+      this.setDriver(null);
     }
     this.#removeCursor(guest.id);
     if (this.#remoteView?.from === guest.id) {
@@ -888,20 +1172,27 @@ class nsJessnixTogether {
     const code = String(codeText || "").trim().toUpperCase();
     const match = text.match(/^\[?([^\]\s]+?)\]?(?::(\d{1,5}))?$/);
     if (!match || !code) {
-      this.status = "Enter the host's address and the room code.";
+      this.status = { id: "jessnix-together-status-address" };
       this.render();
       return;
     }
     const host = match[1];
     const port = Number(match[2]) || DEFAULT_PORT;
     if (/^[\d.]+$/.test(host) && !isPrivateAddress(host)) {
-      this.status = "That address is on the internet, not your network or VPN.";
+      this.status = { id: "jessnix-together-status-internet" };
       this.render();
       return;
     }
     this.role = "guest";
     this.isWaiting = true;
     this.status = "";
+    this.#joinTarget = { address: host, port, code };
+    this.board = [];
+    this.party = false;
+    this.readyCheck = false;
+    this.iAmReady = false;
+    this.driver = null;
+    this.talking = new Set();
     this.peers.clear();
     this.chat = [];
     this.#mirrors.clear();
@@ -915,7 +1206,7 @@ class nsJessnixTogether {
     } catch (e) {
       this.role = null;
       this.isWaiting = false;
-      this.status = "Couldn't connect to that address.";
+      this.status = { id: "jessnix-together-status-connect" };
       this.render();
       return;
     }
@@ -926,7 +1217,7 @@ class nsJessnixTogether {
   #onHostMessage(message) {
     switch (message.t) {
       case "reject":
-        this.#rejectReason = String(message.reason || "The host declined.");
+        this.#rejectReason = REJECT_IDS[message.reasonId] || "jessnix-together-reject-declined";
         break;
       case "welcome":
         this.isWaiting = false;
@@ -934,10 +1225,53 @@ class nsJessnixTogether {
         this.hostName = cleanName(message.host.name);
         this.#setPeers(message.peers);
         this.#startSession();
-        this.#systemLine(`You joined ${this.hostName}'s room.`);
+        this.#systemLine("jessnix-together-line-you-joined", { name: this.hostName });
+        this.#setBoard(message.board);
+        this.party = !!message.party;
+        this.driver = typeof message.driver === "string" ? message.driver : null;
+        this.talking = new Set((message.talking || []).filter(id => typeof id === "string"));
+        Services.prefs.setStringPref(
+          PREF_LAST_ROOM,
+          JSON.stringify({ name: this.hostName, ...this.#joinTarget })
+        );
         this.#onTabs(message);
         this.render();
         break;
+      case "voice":
+        this.#playVoice(message.from, message.data);
+        break;
+      case "voice-state":
+        this.#onVoiceState(message.from, !!message.on);
+        break;
+      case "voice-restart":
+        this.#restartVoice();
+        break;
+      case "party":
+        this.party = !!message.on;
+        this.#systemLine(this.party ? "jessnix-together-line-party-on" : "jessnix-together-line-party-off");
+        this.render();
+        break;
+      case "ready-check":
+        this.readyCheck = true;
+        this.iAmReady = false;
+        this.#notify("jessnix-together-ready-asked");
+        this.render();
+        break;
+      case "ready-done":
+        this.readyCheck = false;
+        this.render();
+        break;
+      case "board":
+        this.#setBoard(message.items);
+        this.render();
+        break;
+      case "driver": {
+        this.driver = typeof message.id === "string" ? message.id : null;
+        const name = this.driver === this.me.id ? this.me.name : this.peers.get(this.driver)?.name;
+        this.#systemLine(this.driver ? "jessnix-together-line-driving" : "jessnix-together-line-host-drives", { name: name || "" });
+        this.render();
+        break;
+      }
       case "peers":
         this.#setPeers(message.list);
         this.render();
@@ -958,7 +1292,7 @@ class nsJessnixTogether {
     }
   }
 
-  #rejectReason = "";
+  #rejectReason = null;
 
   #setPeers(list) {
     this.peers.clear();
@@ -974,16 +1308,16 @@ class nsJessnixTogether {
       return;
     }
     const wasWaiting = this.isWaiting;
-    const message = this.#rejectReason
+    const id = this.#rejectReason
       ? this.#rejectReason
       : reason === "unreachable" && wasWaiting
-        ? "Couldn't reach that address. Check it, and that the host's room is open."
-        : "The room closed.";
-    this.#rejectReason = "";
+        ? "jessnix-together-status-unreachable"
+        : "jessnix-together-status-closed";
+    this.#rejectReason = null;
     this.#endSession();
-    this.status = message;
+    this.status = { id };
     if (!wasWaiting) {
-      this.#notify(message);
+      this.#notify(id);
     }
     this.render();
   }
@@ -1064,14 +1398,14 @@ class nsJessnixTogether {
   shareTabAsGuest(tab) {
     const url = tab?.linkedBrowser?.currentURI?.spec;
     if (this.role !== "guest" || !isWebURL(url)) {
-      this.status = "Only web pages can be shared.";
+      this.status = { id: "jessnix-together-status-web-only" };
       this.render();
       return;
     }
     this.status = "";
     this.#conn.send({ t: "open", url });
     // The host's copy comes back as a shared tab; this one stays private.
-    this.#systemLine("Tab sent to the room.");
+    this.#systemLine("jessnix-together-line-sent");
   }
 
   #mirrorId(tab) {
@@ -1128,6 +1462,14 @@ class nsJessnixTogether {
     this.#announceTimer = this.#keepaliveTimer = this.#tabsTimer = null;
     this.stopView({ quiet: true });
     this.#closeRemoteView();
+    this.stopVoice();
+    for (const id of [...this.#voiceIn.keys()]) {
+      this.#stopVoiceIn(id);
+    }
+    this.talking = new Set();
+    this.readyCheck = false;
+    this.ready = new Set();
+    this.driver = null;
     for (const id of [...this.#cursors.keys()]) {
       this.#removeCursor(id);
     }
@@ -1170,7 +1512,7 @@ class nsJessnixTogether {
     }
     if (this.role === "host") {
       for (const guest of [...this.#guests.values()]) {
-        guest.conn.send({ t: "reject", reason: "The host ended the room." });
+        guest.conn.send({ t: "reject", reasonId: "ended", reason: "The host ended the room." });
         guest.conn.close("ended");
       }
     } else if (this.#conn) {
@@ -1240,8 +1582,14 @@ class nsJessnixTogether {
         this.#closedByMe.add(id);
       }
     }
+    if (event.type === "TabSelect" && this.driver === this.me.id && !this.#selectingForFollow) {
+      const id = this.#mirrorId(tab);
+      if (id) {
+        this.#conn?.send({ t: "select", tabId: id });
+      }
+    }
     if (event.type === "TabSelect") {
-      if (!this.#selectingForFollow && this.follow) {
+      if (!this.#selectingForFollow && this.follow && this.driver !== this.me.id) {
         const id = this.#mirrorId(tab);
         if (id !== this.hostActive) {
           // Picking another tab yourself stops following, until turned back on.
@@ -1305,24 +1653,24 @@ class nsJessnixTogether {
     if (from !== this.me.id && this.#panel?.state !== "open") {
       this.unread++;
       this.#updateButton();
-      this.#notify(`${person.name}: ${String(text).slice(0, 80)}`);
+      this.#notify("jessnix-together-toast-chat", { name: person.name, text: String(text).slice(0, 80) });
     }
     this.render();
   }
 
-  #systemLine(text) {
-    this.chat.push({ system: true, text });
+  #systemLine(id, args) {
+    this.chat.push({ system: true, id, args });
     this.chat = this.chat.slice(-MAX_CHAT);
   }
 
   // A short message near the Together button.
-  #notify(text) {
+  #notify(id, args) {
     let toast = document.getElementById("jessnix-together-toast");
     if (!toast) {
       toast = this.#el("div", { id: "jessnix-together-toast" });
       document.documentElement.appendChild(toast);
     }
-    toast.textContent = text;
+    document.l10n.setAttributes(toast, id, args);
     toast.setAttribute("shown", "true");
     clearTimeout(this.toastTimer);
     this.toastTimer = setTimeout(() => toast.removeAttribute("shown"), 4500);
@@ -1341,8 +1689,8 @@ class nsJessnixTogether {
     if (!tabId) {
       return;
     }
-    // Only the host's scrolling leads; followers scroll with it.
-    if (data.kind === "scroll" && this.role !== "host") {
+    // Only the host's (or the driver's) scrolling leads; followers scroll with it.
+    if (data.kind === "scroll" && this.role !== "host" && this.driver !== this.me.id) {
       return;
     }
     const message = { t: "page", tabId, ...data };
@@ -1400,11 +1748,14 @@ class nsJessnixTogether {
         }
         break;
       case "scroll":
-        if (this.role === "guest" && this.follow) {
+        if ((this.role === "guest" && this.follow) || (this.role === "host" && message.from === this.driver)) {
           this.#actorFor(tab)?.sendAsyncMessage("apply-scroll", { fx: Number(message.fx) || 0, fy: Number(message.fy) || 0 });
         }
         break;
       case "media":
+        if (this.role === "host" && this.party && message.from !== this.driver) {
+          break;
+        }
         this.#actorFor(tab)?.sendAsyncMessage("apply-media", {
           time: Number(message.time),
           paused: !!message.paused,
@@ -1484,7 +1835,7 @@ class nsJessnixTogether {
     }
     this.isShowingView = true;
     this.#viewTimer = setInterval(() => this.#sendViewFrame(), VIEW_INTERVAL_MS);
-    this.#systemLine("You are showing your tab live.");
+    this.#systemLine("jessnix-together-line-live");
     this.render();
   }
 
@@ -1561,7 +1912,7 @@ class nsJessnixTogether {
           { class: "jessnix-together-view-bar" },
           this.#el("span", { class: "jessnix-together-dot", style: `background:${person.color}` }),
           title,
-          this.#el("button", { class: "jessnix-together-view-close", text: "✕", title: "Hide", onclick: () => this.#closeRemoteView({ dismissed: true }) })
+          this.#el("button", { class: "jessnix-together-view-close", text: "✕", l10n: "jessnix-together-view-hide", onclick: () => this.#closeRemoteView({ dismissed: true }) })
         ),
         img
       );
@@ -1571,7 +1922,10 @@ class nsJessnixTogether {
     if (this.#remoteView.dismissed) {
       return;
     }
-    this.#remoteView.title.textContent = `${person.name}'s tab: ${message.title || ""}`;
+    document.l10n.setAttributes(this.#remoteView.title, "jessnix-together-view-title", {
+      name: person.name,
+      title: String(message.title || ""),
+    });
     this.#remoteView.img.src = message.img;
   }
 
@@ -1588,6 +1942,335 @@ class nsJessnixTogether {
     this.#remoteView.el.remove();
     this.#remoteView = null;
   }
+
+  // ---- Remember friends ----------------------------------------------------
+
+  get lastRoom() {
+    try {
+      const room = JSON.parse(Services.prefs.getStringPref(PREF_LAST_ROOM, ""));
+      return room?.address ? room : null;
+    } catch {
+      return null;
+    }
+  }
+
+  get friends() {
+    try {
+      const list = JSON.parse(Services.prefs.getStringPref(PREF_FRIENDS, "[]"));
+      return Array.isArray(list) ? list.filter(f => f?.address) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  saveFriend() {
+    const target = this.#joinTarget;
+    if (!target) {
+      return;
+    }
+    const list = this.friends.filter(f => f.address !== target.address);
+    list.push({ name: this.hostName, address: target.address, port: target.port });
+    Services.prefs.setStringPref(PREF_FRIENDS, JSON.stringify(list.slice(-20)));
+    this.render();
+  }
+
+  removeFriend(friend) {
+    Services.prefs.setStringPref(
+      PREF_FRIENDS,
+      JSON.stringify(this.friends.filter(f => f.address !== friend.address || f.port !== friend.port))
+    );
+    this.render();
+  }
+
+  // ---- Hand over control ---------------------------------------------------
+
+  // Host: a guest drives (their tab choice and scrolling lead), or null.
+  setDriver(id) {
+    if (this.role !== "host") {
+      return;
+    }
+    this.driver = id && this.peers.has(id) ? id : null;
+    this.#broadcast({ t: "driver", id: this.driver });
+    if (this.driver) {
+      this.#systemLine("jessnix-together-line-driving", { name: this.peers.get(this.driver).name });
+    } else {
+      this.#systemLine("jessnix-together-line-host-drives");
+    }
+    this.render();
+  }
+
+  // ---- Watch party -----------------------------------------------------------
+
+  setParty(on) {
+    if (this.role !== "host") {
+      return;
+    }
+    this.party = !!on;
+    this.#broadcast({ t: "party", on: this.party });
+    this.#systemLine(this.party ? "jessnix-together-line-party-on" : "jessnix-together-line-party-off");
+    this.render();
+  }
+
+  startReadyCheck() {
+    if (this.role !== "host") {
+      return;
+    }
+    this.readyCheck = true;
+    this.ready = new Set();
+    this.#broadcast({ t: "ready-check" });
+    this.render();
+  }
+
+  sendReady() {
+    this.iAmReady = true;
+    this.#conn?.send({ t: "ready" });
+    this.render();
+  }
+
+  // Plays the host's video in front; the play goes out to everyone like any
+  // other play (relay: the page side doesn't hold it back as an echo).
+  playForEveryone() {
+    const tab = gBrowser.selectedTab;
+    this.#actorFor(tab)?.sendAsyncMessage("apply-media", { paused: false, relay: true });
+    this.readyCheck = false;
+    this.#broadcast({ t: "ready-done" });
+    this.render();
+  }
+
+  // ---- Shared board ----------------------------------------------------------
+
+  boardOp(op) {
+    if (this.role === "host") {
+      this.#applyBoardOp(op, this.me.name);
+    } else {
+      this.#conn?.send({ t: "board-op", op });
+    }
+  }
+
+  #applyBoardOp(op, byName) {
+    if (!op || typeof op !== "object") {
+      return;
+    }
+    switch (op.op) {
+      case "add": {
+        const kind = op.kind === "link" ? "link" : "todo";
+        const text = String(op.text || "").slice(0, 300);
+        const url = kind === "link" && isWebURL(op.url) ? op.url : "";
+        if ((kind === "todo" && !text) || (kind === "link" && !url) || this.board.length >= 100) {
+          return;
+        }
+        this.board.push({ id: `b${this.#nextBoardId++}`, kind, text, url, done: false, by: byName });
+        break;
+      }
+      case "toggle": {
+        const item = this.board.find(i => i.id === op.id);
+        if (item) {
+          item.done = !item.done;
+        }
+        break;
+      }
+      case "remove":
+        this.board = this.board.filter(i => i.id !== op.id);
+        break;
+      default:
+        return;
+    }
+    this.#broadcast({ t: "board", items: this.board });
+    this.render();
+  }
+
+  #setBoard(items) {
+    this.board = (Array.isArray(items) ? items : []).slice(0, 100).map(i => ({
+      id: String(i.id || ""),
+      kind: i.kind === "link" ? "link" : "todo",
+      text: String(i.text || "").slice(0, 300),
+      url: isWebURL(i.url) ? i.url : "",
+      done: !!i.done,
+      by: cleanName(i.by),
+    }));
+  }
+
+  // ---- Voice chat --------------------------------------------------------------
+  //
+  // The microphone is captured with Web Audio as 16 kHz samples, sent in short
+  // chunks over the room's own connection, and each listener schedules each
+  // speaker's chunks back to back. No WebRTC: nothing to discover or punch
+  // through, it works wherever the room works.
+
+  async startVoice() {
+    if (!this.role || this.isWaiting || this.voice.on) {
+      return;
+    }
+    try {
+      this.voice.stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      });
+    } catch (e) {
+      this.status = { id: "jessnix-together-status-mic", args: { error: e.message || String(e) } };
+      this.render();
+      return;
+    }
+    this.voice.on = true;
+    this.voice.muted = false;
+    this.#startRecorder();
+    this.#sendVoiceState(true);
+    this.talking.add(this.me.id);
+    this.render();
+  }
+
+  stopVoice() {
+    if (!this.voice.on) {
+      return;
+    }
+    this.voice.on = false;
+    this.#stopCapture();
+    for (const track of this.voice.stream?.getTracks() || []) {
+      track.stop();
+    }
+    this.voice.stream = null;
+    this.talking.delete(this.me.id);
+    this.#sendVoiceState(false);
+    this.render();
+  }
+
+  setMuted(muted) {
+    this.voice.muted = !!muted;
+    for (const track of this.voice.stream?.getAudioTracks() || []) {
+      track.enabled = !this.voice.muted;
+    }
+    this.render();
+  }
+
+  #startRecorder() {
+    this.#stopCapture();
+    if (!this.voice.on || !this.voice.stream) {
+      return;
+    }
+    // Web Audio, not MediaRecorder + MediaSource: streamed media playback in
+    // the browser's own process crashed it; plain Web Audio works there.
+    const context = new AudioContext();
+    const source = context.createMediaStreamSource(this.voice.stream);
+    const processor = context.createScriptProcessor(4096, 1, 1);
+    const step = context.sampleRate / VOICE_RATE;
+    processor.addEventListener("audioprocess", event => {
+      if (!this.voice.on || this.voice.muted) {
+        return;
+      }
+      const input = event.inputBuffer.getChannelData(0);
+      const samples = new Int16Array(Math.floor(input.length / step));
+      for (let i = 0; i < samples.length; i++) {
+        const value = Math.max(-1, Math.min(1, input[Math.floor(i * step)]));
+        samples[i] = value * 32767;
+      }
+      const bytes = new Uint8Array(samples.buffer);
+      let binary = "";
+      for (let i = 0; i < bytes.length; i += 32768) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 32768));
+      }
+      this.#send({ t: "voice", data: btoa(binary) });
+    });
+    // The processor's own output stays silent; it only has to run.
+    source.connect(processor);
+    processor.connect(context.destination);
+    this.voice.capture = { context, source, processor };
+  }
+
+  #stopCapture() {
+    const capture = this.voice.capture;
+    this.voice.capture = null;
+    if (capture) {
+      try {
+        capture.source.disconnect();
+        capture.processor.disconnect();
+        capture.context.close();
+      } catch {}
+    }
+  }
+
+  #sendVoiceState(on) {
+    this.#send({ t: "voice-state", on });
+  }
+
+  #onVoiceState(from, on) {
+    const person = this.#person_of(from);
+    if (on) {
+      this.talking.add(from);
+    } else {
+      this.talking.delete(from);
+      this.#stopVoiceIn(from);
+    }
+    this.#systemLine(on ? "jessnix-together-line-voice-on" : "jessnix-together-line-voice-off", { name: person.name });
+    this.render();
+  }
+
+  // Raw samples need no stream header, so a newcomer just starts hearing.
+  #restartVoice() {}
+
+  // 16-bit samples at VOICE_RATE, scheduled one after another per speaker,
+  // a little ahead of now, and never more than a second behind.
+  #playVoice(from, data) {
+    if (typeof data !== "string" || data.length > 200000) {
+      return;
+    }
+    let samples;
+    try {
+      const binary = atob(data);
+      const bytes = new Uint8Array(binary.length - (binary.length % 2));
+      for (let i = 0; i < bytes.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      samples = new Int16Array(bytes.buffer);
+    } catch {
+      return;
+    }
+    if (!samples.length) {
+      return;
+    }
+    if (!this.#playContext || this.#playContext.state === "closed") {
+      this.#playContext = new AudioContext();
+    }
+    const context = this.#playContext;
+    let stream = this.#voiceIn.get(from);
+    if (!stream) {
+      stream = { next: 0, received: 0 };
+      this.#voiceIn.set(from, stream);
+    }
+    const floats = new Float32Array(samples.length);
+    for (let i = 0; i < samples.length; i++) {
+      floats[i] = samples[i] / 32768;
+    }
+    const buffer = context.createBuffer(1, floats.length, VOICE_RATE);
+    buffer.copyToChannel(floats, 0);
+    const node = context.createBufferSource();
+    node.buffer = buffer;
+    node.connect(context.destination);
+    const now = context.currentTime;
+    if (stream.next < now + 0.03 || stream.next > now + 1) {
+      stream.next = now + VOICE_DELAY_S;
+    }
+    node.start(stream.next);
+    stream.next += buffer.duration;
+    stream.received += samples.length * 2;
+  }
+
+  #stopVoiceIn(from) {
+    this.#voiceIn.delete(from);
+    if (!this.#voiceIn.size && this.#playContext && !this.voice.on) {
+      this.#playContext.close().catch(() => {});
+      this.#playContext = null;
+    }
+  }
+
+  get voiceDebug() {
+    const now = this.#playContext?.currentTime || 0;
+    return [...this.#voiceIn.entries()].map(([from, s]) => ({
+      from,
+      received: s.received,
+      aheadSeconds: Number((s.next - now).toFixed(2)),
+    }));
+  }
+
+
 }
 
 window.gJessnixTogether = new nsJessnixTogether();
