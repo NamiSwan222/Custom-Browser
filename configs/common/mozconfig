@@ -94,6 +94,24 @@ if test "$ZEN_RELEASE"; then
   ac_add_options --disable-crashreporter
 fi
 
+# Jessnix: faster local dev builds (scripts/jessnix.ps1 build, ui, cpp). Release
+# builds above are unchanged.
+# - sccache: scripts/jessnix.ps1 finds it and sets JESSNIX_SCCACHE; it caches
+#   C++ and Rust, so unchanged files are never compiled twice.
+# - no debug symbols: linking xul.dll is the slowest part of a C++ rebuild on
+#   Windows, and writing its PDB is much of that. Crash stacks show less.
+# - no tests: skips compiling thousands of test files (gtests etc.). Set
+#   JESSNIX_DEV_TESTS=1 to build them, e.g. for `npm test`.
+if test -z "$ZEN_RELEASE"; then
+  if test -n "$JESSNIX_SCCACHE" -a "$SCCACHE_GHA_ENABLED" != "true"; then
+    ac_add_options --with-ccache="$JESSNIX_SCCACHE"
+  fi
+  ac_add_options --disable-debug-symbols
+  if test -z "$JESSNIX_DEV_TESTS"; then
+    ac_add_options --disable-tests
+  fi
+fi
+
 ac_add_options --with-unsigned-addon-scopes=app,system
 
 mk_add_options MOZ_DATA_REPORTING=

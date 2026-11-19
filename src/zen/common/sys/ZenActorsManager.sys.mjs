@@ -76,6 +76,40 @@ let JSWINDOWACTORS = {
   },
 };
 
+// Jessnix: Browse Together's page side (src/zen/jessnix/JessnixTogether*.mjs).
+// Registered here, at startup. The browser window starts it in each page while
+// a Together session is on (jessnix.together.active), and the page side adds
+// its own listeners then; what pages report is treated as untrusted.
+JSWINDOWACTORS.JessnixTogether = {
+  parent: {
+    esModuleURI: "chrome://browser/content/zen-components/JessnixTogetherParent.sys.mjs",
+  },
+  child: {
+    esModuleURI: "chrome://browser/content/zen-components/JessnixTogetherChild.sys.mjs",
+  },
+  messageManagerGroups: ["browsers"],
+  safeForUntrustedWebProcess: true,
+  enablePreference: "jessnix.together.active",
+};
+
+// Jessnix: Chrome Web Store pages (src/zen/jessnix/JessnixChromeStore*.mjs):
+// the store's "Add to Chrome" button becomes "Add to Custom Browser".
+JSWINDOWACTORS.JessnixChromeStore = {
+  parent: {
+    esModuleURI: "chrome://browser/content/zen-components/JessnixChromeStoreParent.sys.mjs",
+  },
+  child: {
+    esModuleURI: "chrome://browser/content/zen-components/JessnixChromeStoreChild.sys.mjs",
+    events: {
+      DOMContentLoaded: {},
+    },
+  },
+  matches: ["https://chromewebstore.google.com/*", "https://chrome.google.com/webstore/*"],
+  messageManagerGroups: ["browsers"],
+  safeForUntrustedWebProcess: true,
+  enablePreference: "jessnix.chrome-extensions.enabled",
+};
+
 if (!Services.appinfo.inSafeMode) {
   JSWINDOWACTORS.ZenBoosts = {
     parent: {

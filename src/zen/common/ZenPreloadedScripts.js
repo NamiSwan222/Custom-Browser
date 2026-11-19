@@ -29,6 +29,13 @@
     "chrome://browser/content/zen-components/ZenDownloadAnimation.mjs",
     "resource:///modules/zen/share/ZenShareManager.mjs",
     "chrome://browser/content/zen-components/JessnixPersonalize.mjs",
+    "chrome://browser/content/zen-components/JessnixTopTabs.mjs",
+    "chrome://browser/content/zen-components/JessnixTogether.mjs",
+    "chrome://browser/content/zen-components/JessnixLookExtras.mjs",
+    "chrome://browser/content/zen-components/JessnixSiteTools.mjs",
+    "chrome://browser/content/zen-components/JessnixPower.mjs",
+    "chrome://browser/content/zen-components/JessnixChromeStore.mjs",
+    "chrome://browser/content/zen-components/JessnixUpdates.mjs",
   ];
 
   for (let script of scripts) {

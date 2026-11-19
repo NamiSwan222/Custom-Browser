@@ -13,10 +13,13 @@
     import    copy changed src/, prefs/ and configs/ (branding) into engine/
     build     full build (needed after engine or C++ changes, and the first time)
     ui        rebuild only the browser interface (JS/CSS/HTML): seconds to a minute
+    cpp [dir] quick C++/Rust rebuild after a first `build` (run `import` first if
+              the change is in src/): minutes
     release   full optimized build for daily use and sharing (link-time
               optimization; about an hour). `build` and `ui` go back to a dev build.
     start     run the built browser
     package   make the installer from the last build: dist\<Product>-<version>-setup.exe
+              (signed when JESSNIX_SIGN_CERT points at a .pfx certificate)
     <other>   any other npm script in package.json, passed through
 
 .EXAMPLE
@@ -41,6 +44,32 @@ if (-not (Test-Path "$gitBash\bash.exe")) { throw 'Git for Windows is needed (ba
 if (-not (Test-Path 'C:\mozilla-build\start-shell.bat')) { throw 'MozillaBuild is needed in C:\mozilla-build.' }
 $env:Path = "$gitBash;C:\mozilla-build\bin;$env:Path"
 $env:MOZILLABUILD = 'C:\mozilla-build\'
+
+# This script and package.json call `python3`, which on many Windows machines is
+# only the Microsoft Store stub. Then use MozillaBuild's Python through a shim.
+$py3 = Get-Command python3 -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Source
+if (-not $py3 -or $py3 -like '*\WindowsApps\*') {
+    $shim = Join-Path $env:LOCALAPPDATA 'jessnix\bin'
+    New-Item -ItemType Directory -Force $shim | Out-Null
+    Set-Content (Join-Path $shim 'python3.cmd') '@"C:\mozilla-build\python3\python.exe" %*' -Encoding ascii
+    $env:Path = "$shim;$env:Path"
+}
+
+# sccache for dev builds (configs/common/mozconfig reads JESSNIX_SCCACHE). winget
+# puts it in its Links folder, which a shell opened before the install lacks.
+$sccache = Get-Command sccache -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Source
+if (-not $sccache) {
+    $sccache = @(
+        "$env:LOCALAPPDATA\Microsoft\WinGet\Links\sccache.exe"
+        "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\Mozilla.sccache_*\*\sccache.exe"
+        "$env:USERPROFILE\.mozbuild\sccache\sccache.exe"
+    ) | ForEach-Object { Get-Item $_ -ErrorAction SilentlyContinue } | Select-Object -First 1 -ExpandProperty FullName
+}
+if ($sccache) {
+    $env:JESSNIX_SCCACHE = $sccache -replace '\\', '/'
+    # A Firefox build is bigger than sccache's 10 GB default.
+    if (-not $env:SCCACHE_CACHE_SIZE) { $env:SCCACHE_CACHE_SIZE = '30G' }
+}
 
 # surfer keeps the Firefox source in its own git repo (engine/) and commits it as
 # the base its patches are measured against. That commit needs an author: use this
@@ -140,6 +169,7 @@ switch ($Step) {
         # past a failed step, so they run one at a time here.
         Invoke-Step 'npm run download'
         Invoke-Step 'python3 scripts\fetch_ublock.py'
+        Invoke-Step 'python3 scripts\fetch_hebrew.py'
         Invoke-Step 'npm run import'
         Invoke-Step 'python3 scripts\jessnix_brand_terms.py'
         & $bootstrap
@@ -150,6 +180,8 @@ switch ($Step) {
     'import'    {
         & $selectBrand
         Invoke-Step 'python3 scripts\fetch_ublock.py'
+        # Hebrew language pack and spell-checking dictionary.
+        Invoke-Step 'python3 scripts\fetch_hebrew.py'
         Invoke-Step 'npm run import'
         # Brand names surfer's branding template leaves out.
         Invoke-Step 'python3 scripts\jessnix_brand_terms.py'
@@ -159,6 +191,17 @@ switch ($Step) {
     'build'     { Set-BuildMode dev; Invoke-Build 'build' 'build' }
     'ui'        { Set-BuildMode dev; Invoke-Build 'build:ui' 'build faster' }
     'release'   { Set-BuildMode release; Invoke-Build 'build' 'build' }
+    # Quick C++/Rust rebuild after a first `build`: skips the tiers that only
+    # matter when build files or the interface change. `cpp <dir>` rebuilds
+    # that source folder (e.g. dom/base) first, then relinks.
+    'cpp'       {
+        Set-BuildMode dev
+        & $selectBrand
+        $env:MAR_CHANNEL_ID = $brand
+        $env:ACCEPTED_MAR_CHANNEL_IDS = $brand
+        if ($Rest) { Invoke-Step "python3 mach build $($Rest -join ' ')" $engine }
+        Invoke-Step 'python3 mach build binaries' $engine
+    }
     'package'   {
         # Same mode as the last build, or mach would see a changed mozconfig and
         # reconfigure. surfer remembers the mode in .surfer/.
@@ -194,6 +237,30 @@ switch ($Step) {
         $product = (Get-Content (Join-Path $Repo 'surfer.json') -Raw | ConvertFrom-Json).brands.$brand.brandShortName -replace '\s+', '-'
         $target = Join-Path $out "$product-$version-setup.exe"
         Copy-Item $setup.FullName $target -Force
+        # Code signing (so SmartScreen stops warning), when a certificate is set:
+        #   JESSNIX_SIGN_CERT      path to a .pfx code-signing certificate
+        #   JESSNIX_SIGN_PASSWORD  its password (optional)
+        # signtool comes with the Windows SDK, which `init` installs for the build.
+        if ($env:JESSNIX_SIGN_CERT) {
+            $signtool = Get-ChildItem "$env:USERPROFILE\.mozbuild\vs\Windows Kits\10\bin\*\x64\signtool.exe", "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" -ErrorAction SilentlyContinue |
+                Sort-Object FullName -Descending | Select-Object -First 1
+            if (-not $signtool) { Write-Log 'JESSNIX_SIGN_CERT is set but signtool.exe was not found.'; Write-Log 'exit: 1'; exit 1 }
+            # Run directly, not through Invoke-Step: its log line would hold the
+            # password, and cmd would mangle a password with " or % in it.
+            $signArgs = @('sign', '/fd', 'SHA256', '/td', 'SHA256', '/tr', 'http://timestamp.digicert.com', '/f', $env:JESSNIX_SIGN_CERT)
+            if ($env:JESSNIX_SIGN_PASSWORD) { $signArgs += @('/p', $env:JESSNIX_SIGN_PASSWORD) }
+            $signArgs += $target
+            Write-Log "`n>>> signtool sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com /f `"$env:JESSNIX_SIGN_CERT`"$(if ($env:JESSNIX_SIGN_PASSWORD) { ' /p ****' }) `"$target`""
+            # Windows PowerShell turns a native tool's stderr into errors; with
+            # 'Stop' that would end the script before the exit code is read.
+            $ErrorActionPreference = 'Continue'
+            $signOutput = & $signtool.FullName @signArgs 2>&1 | Out-String
+            $signCode = $LASTEXITCODE
+            $ErrorActionPreference = 'Stop'
+            Write-Log $signOutput.TrimEnd()
+            if ($signCode -ne 0) { Write-Log "Signing failed (exit $signCode)."; Write-Log "exit: $signCode"; exit $signCode }
+            Write-Log 'Installer signed.'
+        }
         # Keep the three newest installers.
         Get-ChildItem $out -Filter '*-setup.exe' | Sort-Object LastWriteTime -Descending |
             Select-Object -Skip 3 | Remove-Item -Force
@@ -205,7 +272,10 @@ switch ($Step) {
         # profile kept there (mach run's default).
         $devProfile = Join-Path $Repo '.profiles\dev'
         New-Item -ItemType Directory -Force $devProfile | Out-Null
-        Invoke-Step "python3 mach run --profile `"$devProfile`"" $engine
+        # -purgecaches: the profile caches the browser window's markup and
+        # scripts, and `ui` doesn't change the build ID that would clear it, so
+        # without this a `ui` build's changes don't show.
+        Invoke-Step "python3 mach run --profile `"$devProfile`" -- -purgecaches" $engine
     }
     default     { Invoke-Step "npm run $Step$extra" }
 }

@@ -1,0 +1,68 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 NamiSwan222. See LICENSE-MIT.
+#
+# Release on the owner's own PC (a self-hosted runner): an optimized build,
+# the installer, and a GitHub release that Custom Browser's update check finds.
+#
+# Setup (once): GitHub > Settings > Actions > Runners > New self-hosted runner
+# (Windows, x64), installed in a path without spaces, with the build tools from
+# PLAN.md section 2. Optional code signing: repository secrets
+# JESSNIX_SIGN_CERT_BASE64 (the .pfx, base64) and JESSNIX_SIGN_PASSWORD.
+#
+# Run: Actions > Release > Run workflow, or push a tag like v0.2.0.
+
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: [self-hosted, windows, x64]
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Keep engine/ (the Firefox source, ~40 GB) between runs.
+          clean: false
+
+      - name: Install npm packages
+        shell: pwsh
+        run: npm ci
+
+      - name: Download Firefox (first run only)
+        shell: pwsh
+        run: if (-not (Test-Path engine)) { .\scripts\jessnix.ps1 init } else { .\scripts\jessnix.ps1 import }
+
+      - name: Optimized build
+        shell: pwsh
+        run: .\scripts\jessnix.ps1 release
+
+      - name: Installer
+        shell: pwsh
+        env:
+          SIGN_CERT_BASE64: ${{ secrets.JESSNIX_SIGN_CERT_BASE64 }}
+          JESSNIX_SIGN_PASSWORD: ${{ secrets.JESSNIX_SIGN_PASSWORD }}
+        run: |
+          if ($env:SIGN_CERT_BASE64) {
+            $cert = Join-Path $env:RUNNER_TEMP 'sign.pfx'
+            [IO.File]::WriteAllBytes($cert, [Convert]::FromBase64String($env:SIGN_CERT_BASE64))
+            $env:JESSNIX_SIGN_CERT = $cert
+          }
+          .\scripts\jessnix.ps1 package
+          if ($env:JESSNIX_SIGN_CERT) { Remove-Item $env:JESSNIX_SIGN_CERT -Force }
+
+      - name: GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = (Get-Content surfer.json -Raw | ConvertFrom-Json).brands.release.release.displayVersion
+          $setup = Get-ChildItem dist -Filter "*-$version-setup.exe" | Select-Object -First 1
+          if (-not $setup) { throw "No installer for $version in dist/" }
+          gh release create "v$version" $setup.FullName --title "Custom Browser $version" --generate-notes

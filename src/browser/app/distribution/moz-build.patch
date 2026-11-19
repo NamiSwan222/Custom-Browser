@@ -2,13 +2,15 @@ diff --git a/browser/app/distribution/moz.build b/browser/app/distribution/moz.b
 index b174449a09..2409d9e220 100644
 --- a/browser/app/distribution/moz.build
 +++ b/browser/app/distribution/moz.build
-@@ -8,3 +8,9 @@ if CONFIG["BUILT_BY_MOZILLA"]:
+@@ -8,3 +8,11 @@ if CONFIG["BUILT_BY_MOZILLA"]:
      FINAL_TARGET_FILES.distribution += [
          "distribution.ini",
      ]
 +
-+# Jessnix: extensions bundled with every build (uBlock Origin). Firefox installs
++# Jessnix: extensions bundled with every build (uBlock Origin, Hebrew). Firefox installs
 +# what it finds in distribution/extensions into each new profile on first run.
 +FINAL_TARGET_FILES.distribution.extensions += [
++    "extensions/he@dictionaries.addons.mozilla.org.xpi",
++    "extensions/langpack-he@firefox.mozilla.org.xpi",
 +    "extensions/uBlock0@raymondhill.net.xpi",
 +]
