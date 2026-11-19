@@ -58,3 +58,18 @@
   value: false
 - name: jessnix.tabs.style.close
   value: 0
+
+# Per space: a background image and font for single spaces, by space id
+# (JSON, set from the space's right-click menu; JessnixSiteTools.mjs).
+- name: jessnix.spaces.looks
+  value: "{}"
+
+# Custom Browser's own new tab page (jessnix-newtab.html). Off: Firefox's.
+- name: jessnix.newtab.enabled
+  value: true
+- name: jessnix.newtab.layout
+  value: ""
+- name: jessnix.newtab.tiles
+  value: ""
+- name: jessnix.newtab.notes
+  value: ""
