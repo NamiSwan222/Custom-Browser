@@ -106,7 +106,7 @@ Zen already turns off Mozilla telemetry, studies and crash-report sending (`pref
 - [ ] Hebrew language pack and spellcheck included
 - [ ] Tab unloading on, hardware video decode confirmed
 - [ ] Bookmark/password import from Chrome/Edge works
-- [ ] Updates: own update feed from GitHub Releases (Phase 12)
+- [x] Updates: from GitHub Releases (Phase 12)
 - [ ] Sync: decide between Firefox Sync (Mozilla account) and none
 
 ### Phase 4: Custom Browser features (what makes it mine)
@@ -122,81 +122,82 @@ Each feature lives in `src/zen/jessnix/` (or its own folder) and gets a note in 
 | **App identity**: the Personalize name and icon also rename and re-icon the installed app's Desktop and Start menu shortcuts and taskbar button (`JessnixAppIdentity.mjs`). All-users shortcuts made by the installer need admin rights, so a per-user Start menu shortcut stands in front of them | Built |
 | **Tabs on top** as a choice (Personalize > Layout > Tabs): Chrome-style tab row above the address bar, new tabs on the right, the selected tab joined to the address row, window buttons in the tab row, the window dragged by the row's empty space, address bar results dropping down in place (`JessnixTopTabs.mjs`, `jessnix-top-tabs.css`). Zen's single toolbar, collapsed sidebar, floating address bar and compact mode are held off while it's on, and given back after | Built, stage 1 (drag to reorder tabs untested). Stages 2-3: Phase 6 |
 | **Browse Together**: browse with friends on a LAN or Radmin/Hamachi/Tailscale, browser to browser with no server. Host a room (found automatically, joined with a code, each guest accepted), shared tabs, follow the host, chat, pointers, Alt+click pings, scroll and video play/pause/seek in step, live tab view. Only page addresses travel, never cookies or logins (`JessnixTogether*.mjs`, `jessnix-together.css`) | Built; tested between two copies on one PC, not yet between two PCs. More: Phase 10 |
-| **Custom Browser new tab page**: mascot, clock, search, shortcut tiles, no network requests | To build (Low); becomes the page builder in Phase 8 |
-| **Mascot theme**: purple, from the icon, light + dark | To build (Low) |
-| **Command palette** (Ctrl+K): tabs, history, bookmarks, settings, actions | To build (Medium), Phase 9 |
-| **Game mode**: one toggle to unload background tabs, pause media, free RAM | To build (Medium), Phase 9 |
-| **Hebrew / RTL helpers**: quick RTL/LTR toggle for text fields | To build (Low), Phase 9 |
-| **Throwaway site profiles**: open a site in a temporary container, wiped on close | To build (Medium, Firefox containers help), Phase 9 |
-| **Screenshot + notes panel** | To build (Medium, Firefox has screenshots), Phase 9 |
+| **Custom Browser new tab page**: clock, search, shortcut tiles, notes, arranged by the person, no network requests | Built (Phase 8) |
+| **Mascot theme**: purple, from the icon, light + dark | To build (Low); waits for the owner's DESIGN.md |
+| **Command palette** (Ctrl+K): tabs, history, bookmarks, settings, actions | Built (Phase 9) |
+| **Game mode**: one toggle to unload background tabs, pause media, free RAM | Built (Phase 9) |
+| **Hebrew / RTL helpers**: quick RTL/LTR toggle for text fields | Built (Firefox's, switched on; Phase 9) |
+| **Throwaway site profiles**: open a site in a temporary container, wiped on close | Built (Phase 9) |
+| **Screenshot + notes panel** | Built (Phase 9) |
 
 ---
 
 ## 5. Roadmap: what comes next
 
-Each phase is usable on its own. Suggested order: **5 → 7 (presets and sharing first) → 8 (per-site styles) → 9 (command palette first) → 11 → 6 → 10 → 12.**
+Each phase is usable on its own. ✋ marks what needs the owner (a test on real hardware, an account, a certificate or a decision).
 
 ### Phase 5: Lock in what's built
-- [ ] Commit the tabs-on-top, Browse Together and build work on a branch
-- [ ] Test Browse Together between two real PCs over Radmin: Windows Firewall prompt (allow on private **and** public networks; Radmin's adapter is often "public"), video in step (a guest may need to click a video once before synced play works)
-- [ ] Test drag to reorder tabs in the tab row with a real mouse
-- [ ] Installer for friends: `jessnix.ps1 release`, then `package`
-- [ ] Write `DESIGN.md` (identity, palette, type, mood): the rules in section 6 need it before more UI
+- [x] Commit the tabs-on-top, Browse Together and build work on a branch (`custom-browser-features`)
+- [ ] ✋ Test Browse Together between two real PCs over Radmin: Windows Firewall prompt (allow on private **and** public networks; Radmin's adapter is often "public"), video in step (a guest may need to click a video once before synced play works). Tested between two copies on one PC, over the Radmin address
+- [ ] ✋ Test drag to reorder tabs in the tab row with a real mouse (automated drags can't finish a native drag)
+- [x] Installer for friends: `jessnix.ps1 release`, then `package`
+- [x] `DESIGN.md`: a **draft** from the globe icon's colours, for the owner to rewrite (section 6 says the direction is the owner's)
 
 ### Phase 6: Finish tabs on top
-- [ ] **Stage 2:** pinned and Essentials tabs as small icon tabs at the start of the row; a space switcher button; folders shown as Chrome-style tab groups
-- [ ] **Stage 3:** an auto-hiding tab row as the top-tabs version of compact mode; Chrome-style tab right-click menu; many tabs: shrink to icons, then scroll
-- [ ] Top / side switch in the tab row's right-click menu
+- [x] **Stage 2:** pinned and Essentials tabs as small icon tabs at the start of the row; Zen's space switcher dots in the row; folders as Chrome-style tab groups (a tinted chip, its tabs beside it, collapsed = chip only)
+- [x] **Stage 3:** compact mode with tabs on top is an auto-hiding tab row (a 4px strip, slides down when pointed at); Firefox's tab right-click menu; many tabs shrink to icons, then the row scrolls
+- [x] "Tabs on top" in the tab row's and the tabs' right-click menus
 
 ### Phase 7: Personalize 2.0 (the customization core)
-- [ ] **Look presets:** save the whole look (Personalize + Layout) as "Work", "Gaming" and so on, and switch in one click
-- [ ] **Share a look:** export a preset as a file or a short code, and import a friend's
-- [ ] **Accent from wallpaper:** a chosen background image offers its main colours as the accent
-- [ ] **Light/dark schedule:** by time of day, or following Windows
-- [ ] **Fonts and UI size:** the browser's own font and text size, separate from page zoom
-- [ ] **Tab style:** height, rounded or square, favicon-only tabs, when the close button shows
-- [ ] **See-through window:** a Windows 11 Mica / blur slider behind the toolbars
-- [ ] **Reset and undo:** reset each section, undo the last look change
+- [x] **Look presets:** save the whole look as "Work", "Gaming" and so on, switch in one click (`JessnixLooks.sys.mjs`, Settings > Personalize > Saved looks; also in the command palette)
+- [x] **Share a look:** a `.cblook` file with the images inside, or a short `CB1-…` code without them
+- [x] **Accent from wallpaper:** the background image's main colours offered as accent swatches
+- [x] **Light/dark schedule:** by time of day (following Windows was already Zen's "auto")
+- [x] **Fonts and UI size:** the browser's own font (any installed) and text size
+- [x] **Tab style:** height, rounded/square/pill, icon-only tabs, close button on hover/always/never
+- [x] **See-through window:** off / a little / medium / a lot, letting Windows 11's Mica show behind the toolbars (✋ not visible in a hidden test window: check it on screen)
+- [x] **Reset and undo:** undo the last look change; reset layout and tabs, colours and window, or everything
 
 ### Phase 8: Make it yours per site and per space
-- [ ] **Per-space look:** each space has its own background, accent and font
-- [ ] **Per-site styles:** force dark mode on any site; your own CSS per site (a built-in Stylus); remembered zoom and font per site
-- [ ] **New tab page builder:** clock, search, shortcut tiles, notes and background, arranged by dragging (grows from the Phase 4 new tab page)
-- [ ] **Address bar at the bottom** as a layout choice
+- [x] **Per-space look:** a background and a font for one space (the space's right-click menu); Zen already gives each space its own colours
+- [x] **Per-site styles:** Zen's Boosts already store per-site colours, dark mode, fonts, hidden page parts and custom CSS; the page's right-click menu now has "Dark mode for this site" and "Style this site…". Firefox remembers zoom per site
+- [x] **New tab page:** Custom Browser's own (`jessnix-newtab.html`): clock, search with the default engine, shortcut tiles, notes; Edit to drag widgets around and show or hide them; no network requests
+- [x] **Address bar at the bottom** (Personalize > Layout); its results open upwards
 
 ### Phase 9: Power features
-- [ ] **Command palette (Ctrl+K):** tabs, history, bookmarks, settings and actions in one box
-- [ ] **Shortcut editor:** rebind any shortcut, with clashes flagged
-- [ ] **Game mode:** unload background tabs, pause media, free RAM; optionally a minimal look while on
-- [ ] **Throwaway site profiles:** a site in its own container, wiped on close
-- [ ] **Screenshot + notes panel**
-- [ ] **Hebrew / RTL helpers:** RTL/LTR toggle for text boxes, Hebrew language pack and spellcheck
+- [x] **Command palette (Ctrl+K):** open tabs, bookmarks, history, settings pages, saved looks and actions (`JessnixPower.mjs`)
+- [x] **Shortcut editor:** already Firefox/Zen's `about:keyboard` (Settings > Keyboard Shortcuts), in the palette
+- [x] **Game mode:** background tabs unloaded and paused, memory freed, compact mode on; off puts compact mode back
+- [x] **Throwaway tabs:** "Open link in a throwaway tab" and a palette action; each in its own temporary container, deleted with everything it stored when its last tab closes
+- [x] **Screenshot + notes:** Firefox's screenshot in the palette; a notes panel per site
+- [x] **RTL/LTR:** Firefox's "Switch Text Direction" in text box menus (on), Ctrl+Shift+X, and in the palette
+- [ ] ✋ Hebrew language pack and spellcheck: install them from addons.mozilla.org (Firefox 160 language pack, Hebrew dictionary)
 
 ### Phase 10: Browse Together 2.0
-- [ ] **Voice chat** in a room (WebRTC, still browser to browser)
-- [ ] **Watch party mode:** host-controlled video, a "ready?" check before play
-- [ ] **Shared board:** a room's own to-do list and bookmarks
-- [ ] **Remember friends:** rejoin the last room, saved friends' addresses
-- [ ] **Hand over control:** the host lets a guest drive
-- [ ] Translate its texts into the Fluent string files (they are written in English in the code for now)
+- [x] **Voice chat:** the microphone as 16 kHz samples over the room's own connection, played with Web Audio (no WebRTC: nothing to discover through VPNs; streamed media playback in the browser's own process crashed it)
+- [x] **Watch party:** "Only I control videos", a ready check with a count, "Play for everyone"
+- [x] **Shared board:** the room's to-dos and links
+- [x] **Remember friends:** rejoin the last room, saved friends, "Keep the same room code" for hosts
+- [x] **Hand over control:** "Let drive": the driver's tab choice and scrolling lead the room
+- [x] Its texts are in `locales/en-US/browser/browser/jessnix-together.ftl`
 
 ### Phase 11: Chrome extensions support
-Firefox already runs Chrome's extension format (WebExtensions, with the `chrome.*` names), and this build accepts unsigned add-ons (`MOZ_REQUIRE_SIGNING` is empty), so many Chrome extensions can run once repackaged.
-- [ ] **Add from Chrome Web Store:** an "Add to Custom Browser" button on Web Store pages; the browser downloads the `.crx` from Google's update service, takes the zip out of it, shows the permission prompt and installs
-- [ ] **Automatic conversion:** add the Firefox extension ID (`browser_specific_settings.gecko.id`), turn a background service worker into a background script, drop or replace keys Firefox doesn't know
-- [ ] **Missing Chrome APIs:** a small compatibility layer (for example `chrome.sidePanel` to Firefox's sidebar, `chrome.offscreen`), and a list of what each extension uses that has no stand-in
-- [ ] **Compatibility check** before installing: works / partly works (and which features don't) / won't work; a list of known-good popular extensions
-- [ ] **Updates:** converted extensions check the Web Store for new versions and convert them again
-- Won't work: extensions built on Chrome-only internals, ones checking for a Google-signed Chrome, DRM-related ones
-- Security: converted extensions skip Mozilla's review, so the permission prompt must be clear and they are marked "from Chrome Web Store" in the add-ons page
+Firefox already runs Chrome's extension format (WebExtensions, with the `chrome.*` names), so many Chrome extensions run once repackaged (`JessnixChromeExtensions.sys.mjs`, `JessnixChromeStore.mjs`).
+- [x] **Add from Chrome Web Store:** an "Add to Custom Browser" bar on Web Store pages; downloads the `.crx` from Google's update service, unwraps it, then Firefox's own permission prompt
+- [x] **Automatic conversion:** Firefox extension id, service worker as background scripts, side panel as a sidebar, keys and permissions Firefox doesn't know removed, marked "From the Chrome Web Store"
+- [x] **Missing Chrome APIs:** a compatibility script (sidePanel, offscreen, importScripts); the report lists what has no stand-in
+- [x] **Compatibility check** before installing: works / partly (which features don't) / won't; a few known-good extensions named
+- [x] **Updates:** checked against the Web Store once a day, converted and installed again when newer
+- Tested: Dark Reader converted, installed and darkening pages
+- Signing: Mozilla can't sign converted extensions, so the first install asks to allow unsigned add-ons (`xpinstall.signatures.required`); Firefox still asks before every install
 - Terms: other browsers (Opera, Kiwi) do this, but it sits in a grey area of the Web Store's terms; it stays a personal-use feature, not one advertised
 
 ### Phase 12: Shipping
-- [ ] **Updates** from GitHub Releases, so installs update themselves
-- [ ] **Code signing,** so Windows SmartScreen stops warning
-- [ ] **Settings sync** across my own PCs: export/import first, sync later
-- [ ] Linux build
-- [ ] Release automation on a self-hosted runner (my PC)
+- [x] **Updates** from GitHub Releases: a daily check of `jessnix.update.repo`; a bar offers to download and run the installer (asking first)
+- [ ] ✋ **Code signing:** `jessnix.ps1 package` signs the installer when `JESSNIX_SIGN_CERT` points at a code-signing certificate (.pfx); buying one is the owner's
+- [x] **Settings backup:** Settings > Personalize > "Back up all my settings" / "Restore settings": every setting, saved looks and images in one `.cbsettings` file. Live sync between PCs is later
+- [ ] ✋ **Linux build:** `scripts/jessnix.sh` (init, build, ui, cpp, release, package, start); needs a Linux machine to run and test
+- [ ] ✋ **Release automation:** `.github/workflows/release.yml` for a self-hosted Windows runner (release build, installer, optional signing, GitHub release); registering the runner on the owner's PC is the owner's
 
 ---
 
