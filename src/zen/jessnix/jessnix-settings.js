@@ -297,6 +297,22 @@ var gJessnixPersonalizeSettings = {
       code.value = "";
       return ["jessnix-looks-imported"];
     });
+    on("jessnixSettingsExport", async () => {
+      const path = await this.pickFile("backup-export", "custom-browser-settings.cbsettings", "*.cbsettings");
+      if (!path) {
+        return null;
+      }
+      await JessnixLooks.exportAll(path);
+      return ["jessnix-settings-exported"];
+    });
+    on("jessnixSettingsImport", async () => {
+      const path = await this.pickFile("backup-import", null, "*.cbsettings");
+      if (!path) {
+        return null;
+      }
+      const result = await JessnixLooks.importAll(path);
+      return ["jessnix-settings-imported", result];
+    });
     on("jessnixLooksUndo", async () => {
       JessnixLooks.undo();
       return ["jessnix-looks-undone"];
@@ -361,19 +377,16 @@ var gJessnixPersonalizeSettings = {
     document.getElementById("jessnixLooksUndo").disabled = !JessnixLooks.canUndo;
   },
 
-  async pickFile(mode) {
+  async pickFile(mode, defaultName = "my-look.cblook", filter = "*.cblook") {
     const picker = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
     const title = await document.l10n.formatValue(`jessnix-looks-pick-${mode}`);
-    picker.init(
-      window.browsingContext,
-      title,
-      mode == "export" ? Ci.nsIFilePicker.modeSave : Ci.nsIFilePicker.modeOpen
-    );
-    picker.appendFilter("Custom Browser look", "*.cblook");
+    const saving = mode.endsWith("export");
+    picker.init(window.browsingContext, title, saving ? Ci.nsIFilePicker.modeSave : Ci.nsIFilePicker.modeOpen);
+    picker.appendFilter("Custom Browser", filter);
     picker.appendFilters(Ci.nsIFilePicker.filterAll);
-    if (mode == "export") {
-      picker.defaultString = "my-look.cblook";
-      picker.defaultExtension = "cblook";
+    if (saving && defaultName) {
+      picker.defaultString = defaultName;
+      picker.defaultExtension = defaultName.split(".").pop();
     }
     const result = await new Promise(resolve => picker.open(resolve));
     if (result == Ci.nsIFilePicker.returnCancel || !picker.file) {

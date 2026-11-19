@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 NamiSwan222. See LICENSE-MIT.
+
+# Updates from GitHub Releases (src/zen/jessnix/JessnixUpdates.mjs): once a
+# day, the latest release of this repo is compared with this browser.
+- name: jessnix.update.check
+  value: true
+- name: jessnix.update.repo
+  value: "NamiSwan222/Custom-Browser"
+# Seconds since 1970.
+- name: jessnix.update.last-check
+  value: 0
+- name: jessnix.update.skip-version
+  value: ""

@@ -349,11 +349,12 @@ export const JessnixChromeExtensions = {
   // Once a day: re-converts converted extensions that have a newer version, and
   // installs those quietly (they were allowed when first added).
   async checkForUpdates({ force = false } = {}) {
-    const last = Number(Services.prefs.getStringPref(PREF_LAST_CHECK, "0")) || 0;
+    // Seconds (a pref int can't hold milliseconds).
+    const last = Services.prefs.getIntPref(PREF_LAST_CHECK, 0) * 1000;
     if (!force && Date.now() - last < 24 * 60 * 60 * 1000) {
       return [];
     }
-    Services.prefs.setStringPref(PREF_LAST_CHECK, String(Date.now()));
+    Services.prefs.setIntPref(PREF_LAST_CHECK, Math.floor(Date.now() / 1000));
     const updated = [];
     for (const [id, info] of Object.entries(this.converted)) {
       const addon = await lazy.AddonManager.getAddonByID(`${id}${ID_SUFFIX}`);

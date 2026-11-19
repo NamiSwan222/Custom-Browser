@@ -187,3 +187,12 @@ jessnix-looks-reset-done = Reset.
 jessnix-looks-error = { $message }
 jessnix-looks-pick-export = Save look as
 jessnix-looks-pick-import = Choose a look file
+
+jessnix-settings-export =
+    .label = Back up all my settings…
+jessnix-settings-import =
+    .label = Restore settings from a backup…
+jessnix-settings-exported = All settings saved to the file. Restore them on another computer with “Restore settings”.
+jessnix-settings-imported = Restored { $prefs } settings and { $looks } saved looks.
+jessnix-looks-pick-backup-export = Save settings backup as
+jessnix-looks-pick-backup-import = Choose a settings backup

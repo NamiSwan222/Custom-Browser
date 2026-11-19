@@ -20,4 +20,4 @@
 - name: jessnix.chrome-extensions.converted
   value: "{}"
 - name: jessnix.chrome-extensions.last-update-check
-  value: "0"
+  value: 0

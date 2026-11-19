@@ -56,6 +56,20 @@ const ALL_PREFS = Object.values(LOOK_SECTIONS).flat();
 const PREF_TYPES = new Map(ALL_PREFS);
 
 const CODE_PREFIX = "CB1-";
+
+// Left out of settings backups: values for this computer or this run only.
+const BACKUP_SKIP = [
+  "jessnix.together.active",
+  "jessnix.tabs.top.saved.",
+  "jessnix.game-mode",
+  "jessnix.update.last-check",
+  "jessnix.chrome-extensions.last-update-check",
+  "jessnix.chrome-extensions.converted",
+  "jessnix.together.button-placed",
+  "jessnix.personalize.icon",
+  "jessnix.personalize.background",
+  "jessnix.spaces.looks",
+];
 const MAX_UNDO = 30;
 const MAX_IMPORT_BYTES = 40 * 1024 * 1024;
 const IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "webp", "gif", "bmp", "ico"]);
@@ -339,6 +353,112 @@ export const JessnixLooks = {
     const look = { prefs: this._onlyLookPrefs(prefs), images: this.current().images };
     this.apply(look);
     return look;
+  },
+
+  // ---- Backing up all settings (the first step of settings sync) -----------
+  //
+  // Every Custom Browser setting (jessnix.*), the look settings that live in
+  // Zen's and Firefox's prefs, the saved looks and their images, in one file.
+  // Values that only make sense on this computer or this run are left out.
+
+  async exportAll(path) {
+    const prefs = {};
+    const add = pref => {
+      if (BACKUP_SKIP.some(prefix => pref.startsWith(prefix)) || !Services.prefs.prefHasUserValue(pref)) {
+        return;
+      }
+      switch (Services.prefs.getPrefType(pref)) {
+        case Services.prefs.PREF_INT:
+          prefs[pref] = { type: "int", value: Services.prefs.getIntPref(pref) };
+          break;
+        case Services.prefs.PREF_BOOL:
+          prefs[pref] = { type: "bool", value: Services.prefs.getBoolPref(pref) };
+          break;
+        case Services.prefs.PREF_STRING:
+          prefs[pref] = { type: "string", value: Services.prefs.getStringPref(pref) };
+          break;
+      }
+    };
+    for (const pref of Services.prefs.getChildList("jessnix.")) {
+      add(pref);
+    }
+    for (const [pref] of ALL_PREFS) {
+      add(pref);
+    }
+    const files = {};
+    for (const [kind, pref] of Object.entries(IMAGE_PREFS)) {
+      const imagePath = Services.prefs.getStringPref(pref, "");
+      if (imagePath && (await IOUtils.exists(imagePath))) {
+        files[`current-${kind}`] = { name: PathUtils.filename(imagePath), data: bytesToBase64(await IOUtils.read(imagePath)) };
+      }
+    }
+    const looks = await this.list();
+    for (const look of looks) {
+      for (const [kind, imagePath] of Object.entries(look.look?.images || {})) {
+        if (await IOUtils.exists(imagePath)) {
+          files[`look-${look.name}-${kind}`] = { name: PathUtils.filename(imagePath), data: bytesToBase64(await IOUtils.read(imagePath)) };
+        }
+      }
+    }
+    await IOUtils.writeJSON(path, { app: "custom-browser-settings", version: 1, saved: Date.now(), prefs, looks, files });
+  },
+
+  async importAll(path) {
+    const info = await IOUtils.stat(path);
+    if (info.size > 200 * 1024 * 1024) {
+      throw new Error("That file is too big to be a settings backup.");
+    }
+    const data = await IOUtils.readJSON(path);
+    if (data?.app !== "custom-browser-settings") {
+      throw new Error("That file isn't a Custom Browser settings backup.");
+    }
+    this.recordUndo();
+    await IOUtils.makeDirectory(imageFolder(), { ignoreExisting: true });
+    // Images first, so prefs can point at their new copies.
+    const restored = {};
+    for (const [key, file] of Object.entries(data.files || {})) {
+      const extension = String(file?.name || "").split(".").pop().toLowerCase();
+      if (!IMAGE_EXTENSIONS.has(extension)) {
+        continue;
+      }
+      const copy = PathUtils.join(imageFolder(), `restored-${Date.now()}-${Object.keys(restored).length}.${extension}`);
+      await IOUtils.write(copy, base64ToBytes(file.data));
+      restored[key] = copy;
+    }
+    let count = 0;
+    for (const [pref, entry] of Object.entries(data.prefs || {})) {
+      const known = pref.startsWith("jessnix.") || PREF_TYPES.has(pref);
+      if (!known || BACKUP_SKIP.some(prefix => pref.startsWith(prefix)) || !entry || !["int", "bool", "string"].includes(entry.type)) {
+        continue;
+      }
+      writePref(pref, entry.type, entry.value);
+      count++;
+    }
+    for (const [kind, pref] of Object.entries(IMAGE_PREFS)) {
+      if (restored[`current-${kind}`]) {
+        Services.prefs.setStringPref(pref, restored[`current-${kind}`]);
+      }
+    }
+    const looks = (Array.isArray(data.looks) ? data.looks : [])
+      .map(look => {
+        const images = {};
+        for (const kind of Object.keys(IMAGE_PREFS)) {
+          if (restored[`look-${look.name}-${kind}`]) {
+            images[kind] = restored[`look-${look.name}-${kind}`];
+          }
+        }
+        return {
+          name: String(look.name || "").slice(0, 40),
+          saved: look.saved,
+          look: { prefs: this._onlyLookPrefs(look.look?.prefs), images },
+        };
+      })
+      .filter(l => l.name);
+    if (looks.length) {
+      await this._writeList(looks);
+    }
+    notify();
+    return { prefs: count, looks: looks.length };
   },
 
   // Only known look settings, with values of the right type, get in.

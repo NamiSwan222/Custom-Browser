@@ -19,6 +19,7 @@
               optimization; about an hour). `build` and `ui` go back to a dev build.
     start     run the built browser
     package   make the installer from the last build: dist\<Product>-<version>-setup.exe
+              (signed when JESSNIX_SIGN_CERT points at a .pfx certificate)
     <other>   any other npm script in package.json, passed through
 
 .EXAMPLE
@@ -233,6 +234,19 @@ switch ($Step) {
         $product = (Get-Content (Join-Path $Repo 'surfer.json') -Raw | ConvertFrom-Json).brands.$brand.brandShortName -replace '\s+', '-'
         $target = Join-Path $out "$product-$version-setup.exe"
         Copy-Item $setup.FullName $target -Force
+        # Code signing (so SmartScreen stops warning), when a certificate is set:
+        #   JESSNIX_SIGN_CERT      path to a .pfx code-signing certificate
+        #   JESSNIX_SIGN_PASSWORD  its password (optional)
+        # signtool comes with the Windows SDK, which `init` installs for the build.
+        if ($env:JESSNIX_SIGN_CERT) {
+            $signtool = Get-ChildItem "$env:USERPROFILE\.mozbuild\vs\Windows Kits\10\bin\*\x64\signtool.exe", "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" -ErrorAction SilentlyContinue |
+                Sort-Object FullName -Descending | Select-Object -First 1
+            if (-not $signtool) { Write-Log 'JESSNIX_SIGN_CERT is set but signtool.exe was not found.'; Write-Log 'exit: 1'; exit 1 }
+            $passwordArg = if ($env:JESSNIX_SIGN_PASSWORD) { "/p `"$env:JESSNIX_SIGN_PASSWORD`"" } else { '' }
+            Invoke-Step ("`"$($signtool.FullName)`" sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com " +
+                "/f `"$env:JESSNIX_SIGN_CERT`" $passwordArg `"$target`"")
+            Write-Log 'Installer signed.'
+        }
         # Keep the three newest installers.
         Get-ChildItem $out -Filter '*-setup.exe' | Sort-Object LastWriteTime -Descending |
             Select-Object -Skip 3 | Remove-Item -Force

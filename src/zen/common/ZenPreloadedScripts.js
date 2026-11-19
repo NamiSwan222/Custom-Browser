@@ -35,6 +35,7 @@
     "chrome://browser/content/zen-components/JessnixSiteTools.mjs",
     "chrome://browser/content/zen-components/JessnixPower.mjs",
     "chrome://browser/content/zen-components/JessnixChromeStore.mjs",
+    "chrome://browser/content/zen-components/JessnixUpdates.mjs",
   ];
 
   for (let script of scripts) {
