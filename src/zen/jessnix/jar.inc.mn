@@ -21,5 +21,7 @@
         content/browser/zen-styles/jessnix-newtab.css                         (../../zen/jessnix/jessnix-newtab.css)
         content/browser/zen-components/JessnixPower.mjs                       (../../zen/jessnix/JessnixPower.mjs)
         content/browser/zen-styles/jessnix-power.css                          (../../zen/jessnix/jessnix-power.css)
+        content/browser/zen-components/JessnixChromeExtensions.sys.mjs        (../../zen/jessnix/JessnixChromeExtensions.sys.mjs)
+        content/browser/zen-components/JessnixChromeStore.mjs                 (../../zen/jessnix/JessnixChromeStore.mjs)
         content/browser/zen-styles/jessnix-together.css                         (../../zen/jessnix/jessnix-together.css)
         content/browser/preferences/jessnix-settings.js                         (../../zen/jessnix/jessnix-settings.js)

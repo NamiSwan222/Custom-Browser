@@ -11,3 +11,13 @@
 # this site".
 - name: jessnix.site-notes
   value: "{}"
+
+# Chrome extensions: "Add to Custom Browser" on Chrome Web Store pages
+# (JessnixChromeStore.mjs). Converted extensions are remembered for update
+# checks (JSON: store id -> version).
+- name: jessnix.chrome-extensions.enabled
+  value: true
+- name: jessnix.chrome-extensions.converted
+  value: "{}"
+- name: jessnix.chrome-extensions.last-update-check
+  value: "0"
