@@ -12,9 +12,18 @@ Jessnix is a fork of [Zen Browser](https://github.com/zen-browser/desktop), whic
 
 Download `Custom-Browser-<version>-setup.exe` from [Releases](https://github.com/NamiSwan222/Custom-Browser/releases) and run it. The installer isn't code-signed yet, so Windows SmartScreen may say it "protected your PC": choose **More info**, then **Run anyway**.
 
-Jessnix doesn't update itself yet: install a newer release over the old one. Your profile (logins, bookmarks, settings) is kept.
+From 0.2.0 it checks GitHub once a day and offers new versions; installing over the old one keeps your profile (logins, bookmarks, settings).
 
-What you get: uBlock Origin built in, strict tracking protection and HTTPS-only, saved logins, a bookmarks bar, and **Settings > Look and Feel > Personalize** to set your own browser name, icon, background, size, corners and colours.
+What you get:
+- **Private by default:** uBlock Origin built in, strict tracking protection, HTTPS-only, saved logins, a bookmarks bar.
+- **Tabs on top or in a sidebar** (Settings > Look and Feel > Personalize > Layout, or right-click the tab row).
+- **Personalize:** your own browser name, icon, background, colours (or colours from your background), font and size, tab style, a see-through window, light/dark by time of day, the address bar at the bottom. Save looks ("Work", "Gaming"), share them as a file or a code, undo, reset, and back up all settings to a file.
+- **Per site and per space:** "Dark mode for this site" and "Style this site…" in the page's right-click menu; a background and font for each space.
+- **New tab page:** clock, search, shortcuts and notes; Edit to arrange them.
+- **Command palette (Ctrl+K):** tabs, bookmarks, history, settings, looks and actions.
+- **Game mode, throwaway tabs** (a site in a temporary container, wiped on close) and **notes per site**.
+- **Browse Together:** browse with friends on the same network or Radmin VPN: shared tabs, follow, chat, voice, pointers, a watch party, a shared board, a live tab view. Only page addresses are shared, never logins.
+- **Chrome extensions:** on a Chrome Web Store page, "Add to Custom Browser" converts the extension, says what will work, and installs it.
 
 ## Building on Windows
 
@@ -28,7 +37,14 @@ npm i
 .\scripts\jessnix.ps1 ui      # after changing only JS/CSS/HTML: fast rebuild
 .\scripts\jessnix.ps1 release # optimized build for sharing (~30 min on 32 threads)
 .\scripts\jessnix.ps1 package # installer: dist\Custom-Browser-<version>-setup.exe
+.\scripts\jessnix.ps1 cpp     # after changing C++/Rust: quick rebuild
 ```
+
+Signing: set `JESSNIX_SIGN_CERT` (a .pfx code-signing certificate) and `JESSNIX_SIGN_PASSWORD` before `package`. Releases can also be built by `.github/workflows/release.yml` on a self-hosted Windows runner.
+
+## Building on Linux
+
+`./scripts/jessnix.sh` takes the same steps (`init`, `build`, `ui`, `cpp`, `release`, `package`, `start`). Not yet tested on a Linux machine.
 
 ## License
 
