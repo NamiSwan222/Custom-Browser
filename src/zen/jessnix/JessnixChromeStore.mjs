@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 NamiSwan222. See LICENSE-MIT.
 
-// Chrome Web Store pages, in each browser window: on an extension's page a bar
-// offers "Add to Custom Browser". Adding converts the extension
+// Chrome Web Store pages, in each browser window: on an extension's page the
+// store's own button reads "Add to Custom Browser" (JessnixChromeStoreChild
+// .sys.mjs); if the store's page has changed so that button can't be found,
+// a bar offers it instead. Adding converts the extension
 // (JessnixChromeExtensions.sys.mjs), shows what will and won't work, asks once
 // to allow unsigned add-ons (Mozilla can't sign converted extensions), then
 // installs through Firefox's own permission prompt. Converted extensions are
@@ -17,6 +19,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
 const PREF_ENABLED = "jessnix.chrome-extensions.enabled";
 const PREF_SIGNING = "xpinstall.signatures.required";
 const BAR_ID = "jessnix-chrome-store";
+const ACTOR = "JessnixChromeStore";
+// How long the page's own button has to appear before the bar is shown.
+const BAR_DELAY_MS = 4000;
 
 // Popular extensions known to work once converted (most also have a Firefox
 // version on addons.mozilla.org, which is the better choice when it exists).
@@ -30,6 +35,10 @@ const KNOWN_GOOD = {
 };
 
 class nsJessnixChromeStore {
+  // Browsers whose store page shows our button.
+  #pageButton = new WeakSet();
+  #barTimer = null;
+
   init() {
     gBrowser.addTabsProgressListener({
       onLocationChange: (browser, webProgress, _request, location) => {
@@ -57,10 +66,48 @@ class nsJessnixChromeStore {
       existing?.close();
       return;
     }
+    const browser = gBrowser.selectedBrowser;
+    browser.browsingContext?.currentWindowGlobal?.getActor(ACTOR)?.sendAsyncMessage("start");
     if (existing?.dataset?.extensionId === id) {
       return;
     }
     existing?.close();
+    clearTimeout(this.#barTimer);
+    this.#barTimer = setTimeout(() => {
+      if (gBrowser.selectedBrowser === browser && !this.#pageButton.has(browser) &&
+          lazy.JessnixChromeExtensions.webStoreId(browser.currentURI?.spec) === id) {
+        this.#showBar(id);
+      }
+    }, BAR_DELAY_MS);
+  }
+
+  pageButtonReady(browser) {
+    if (!browser) {
+      return;
+    }
+    this.#pageButton.add(browser);
+    if (browser === gBrowser.selectedBrowser) {
+      const bar = this.#box.getNotificationWithValue(BAR_ID);
+      if (bar?.dataset?.extensionId) {
+        bar.close();
+      }
+    }
+  }
+
+  async #addon(id) {
+    return lazy.AddonManager.getAddonByID(`${id}${lazy.JessnixChromeExtensions.ID_SUFFIX}`);
+  }
+
+  async sendState(actor, id, busy = false) {
+    try {
+      actor?.sendAsyncMessage("state", { installed: !!(await this.#addon(id)), busy });
+    } catch {
+      // The page went away.
+    }
+  }
+
+  #showBar(id) {
+    const box = this.#box;
     box
       .appendNotification(
         BAR_ID,
@@ -92,13 +139,35 @@ class nsJessnixChromeStore {
     box.appendNotification(BAR_ID, { label: message, priority: box[priority] }, []);
   }
 
-  async add(id) {
+  async add(id, actor = null) {
+    if (actor) {
+      this.sendState(actor, id, true);
+    }
+    try {
+      await this.#add(id, actor);
+    } catch (e) {
+      this.#say(`Couldn't add it: ${e.message || e}`, "PRIORITY_WARNING_MEDIUM");
+      this.sendState(actor, id);
+    }
+  }
+
+  async remove(id, actor = null) {
+    const addon = await this.#addon(id);
+    if (addon && Services.prompt.confirm(window, "Remove extension", `Remove ${addon.name} from Custom Browser?`)) {
+      await addon.uninstall();
+    }
+    this.sendState(actor, id);
+  }
+
+  async #add(id, actor) {
+    const done = () => this.sendState(actor, id);
     this.#say("Downloading and converting the extension…");
     let prepared;
     try {
       prepared = await lazy.JessnixChromeExtensions.prepare(id);
     } catch (e) {
       this.#say(`Couldn't add it: ${e.message || e}`, "PRIORITY_WARNING_MEDIUM");
+      done();
       return;
     }
     const { report, name } = prepared;
@@ -125,11 +194,13 @@ class nsJessnixChromeStore {
     if (report.verdict === "wont") {
       Services.prompt.alert(window, "Chrome extension", lines.join("\n"));
       this.#box.getNotificationWithValue(BAR_ID)?.close();
+      done();
       return;
     }
     const ok = Services.prompt.confirm(window, "Add this Chrome extension?", lines.join("\n"));
     if (!ok) {
       this.#box.getNotificationWithValue(BAR_ID)?.close();
+      done();
       return;
     }
     if (needsUnsigned) {
@@ -141,14 +212,20 @@ class nsJessnixChromeStore {
         onInstallEnded: () => {
           lazy.JessnixChromeExtensions.remember(id, prepared.version);
           this.#say(`${name} was added.`);
+          done();
         },
-        onInstallFailed: () => this.#say(`Couldn't add ${name}.`, "PRIORITY_WARNING_MEDIUM"),
+        onInstallFailed: () => {
+          this.#say(`Couldn't add ${name}.`, "PRIORITY_WARNING_MEDIUM");
+          done();
+        },
+        onInstallCancelled: done,
       });
       // Firefox's own prompt, listing what the extension may do.
       lazy.AddonManager.installAddonFromAOM(gBrowser.selectedBrowser, gBrowser.currentURI, install);
       this.#box.getNotificationWithValue(BAR_ID)?.close();
     } catch (e) {
       this.#say(`Couldn't add it: ${e.message || e}`, "PRIORITY_WARNING_MEDIUM");
+      done();
     }
   }
 

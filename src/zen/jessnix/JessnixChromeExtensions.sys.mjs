@@ -218,6 +218,7 @@ export function analyze(manifest, sourceText) {
 
 export const JessnixChromeExtensions = {
   webStoreId,
+  ID_SUFFIX,
 
   // Downloads the store's package for id, converts it, and returns
   // { file, manifest, name, version, report } without installing.

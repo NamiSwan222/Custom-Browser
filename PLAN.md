@@ -183,7 +183,7 @@ Each phase is usable on its own. ✋ marks what needs the owner (a test on real 
 
 ### Phase 11: Chrome extensions support
 Firefox already runs Chrome's extension format (WebExtensions, with the `chrome.*` names), so many Chrome extensions run once repackaged (`JessnixChromeExtensions.sys.mjs`, `JessnixChromeStore.mjs`).
-- [x] **Add from Chrome Web Store:** an "Add to Custom Browser" bar on Web Store pages; downloads the `.crx` from Google's update service, unwraps it, then Firefox's own permission prompt
+- [x] **Add from Chrome Web Store:** the store's own "Add to Chrome" button becomes "Add to Custom Browser" ("Remove from Custom Browser" once added), and the "Switch to Chrome" banner and popup are hidden (`JessnixChromeStoreChild.sys.mjs`); a bar takes over if Google changes the page so the button can't be found; downloads the `.crx` from Google's update service, unwraps it, then Firefox's own permission prompt
 - [x] **Automatic conversion:** Firefox extension id, service worker as background scripts, side panel as a sidebar, keys and permissions Firefox doesn't know removed, marked "From the Chrome Web Store"
 - [x] **Missing Chrome APIs:** a compatibility script (sidePanel, offscreen, importScripts); the report lists what has no stand-in
 - [x] **Compatibility check** before installing: works / partly (which features don't) / won't; a few known-good extensions named

@@ -92,6 +92,24 @@ JSWINDOWACTORS.JessnixTogether = {
   enablePreference: "jessnix.together.active",
 };
 
+// Jessnix: Chrome Web Store pages (src/zen/jessnix/JessnixChromeStore*.mjs):
+// the store's "Add to Chrome" button becomes "Add to Custom Browser".
+JSWINDOWACTORS.JessnixChromeStore = {
+  parent: {
+    esModuleURI: "chrome://browser/content/zen-components/JessnixChromeStoreParent.sys.mjs",
+  },
+  child: {
+    esModuleURI: "chrome://browser/content/zen-components/JessnixChromeStoreChild.sys.mjs",
+    events: {
+      DOMContentLoaded: {},
+    },
+  },
+  matches: ["https://chromewebstore.google.com/*", "https://chrome.google.com/webstore/*"],
+  messageManagerGroups: ["browsers"],
+  safeForUntrustedWebProcess: true,
+  enablePreference: "jessnix.chrome-extensions.enabled",
+};
+
 if (!Services.appinfo.inSafeMode) {
   JSWINDOWACTORS.ZenBoosts = {
     parent: {
