@@ -245,9 +245,20 @@ switch ($Step) {
             $signtool = Get-ChildItem "$env:USERPROFILE\.mozbuild\vs\Windows Kits\10\bin\*\x64\signtool.exe", "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" -ErrorAction SilentlyContinue |
                 Sort-Object FullName -Descending | Select-Object -First 1
             if (-not $signtool) { Write-Log 'JESSNIX_SIGN_CERT is set but signtool.exe was not found.'; Write-Log 'exit: 1'; exit 1 }
-            $passwordArg = if ($env:JESSNIX_SIGN_PASSWORD) { "/p `"$env:JESSNIX_SIGN_PASSWORD`"" } else { '' }
-            Invoke-Step ("`"$($signtool.FullName)`" sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com " +
-                "/f `"$env:JESSNIX_SIGN_CERT`" $passwordArg `"$target`"")
+            # Run directly, not through Invoke-Step: its log line would hold the
+            # password, and cmd would mangle a password with " or % in it.
+            $signArgs = @('sign', '/fd', 'SHA256', '/td', 'SHA256', '/tr', 'http://timestamp.digicert.com', '/f', $env:JESSNIX_SIGN_CERT)
+            if ($env:JESSNIX_SIGN_PASSWORD) { $signArgs += @('/p', $env:JESSNIX_SIGN_PASSWORD) }
+            $signArgs += $target
+            Write-Log "`n>>> signtool sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com /f `"$env:JESSNIX_SIGN_CERT`"$(if ($env:JESSNIX_SIGN_PASSWORD) { ' /p ****' }) `"$target`""
+            # Windows PowerShell turns a native tool's stderr into errors; with
+            # 'Stop' that would end the script before the exit code is read.
+            $ErrorActionPreference = 'Continue'
+            $signOutput = & $signtool.FullName @signArgs 2>&1 | Out-String
+            $signCode = $LASTEXITCODE
+            $ErrorActionPreference = 'Stop'
+            Write-Log $signOutput.TrimEnd()
+            if ($signCode -ne 0) { Write-Log "Signing failed (exit $signCode)."; Write-Log "exit: $signCode"; exit $signCode }
             Write-Log 'Installer signed.'
         }
         # Keep the three newest installers.

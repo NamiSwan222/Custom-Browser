@@ -193,7 +193,7 @@ Firefox already runs Chrome's extension format (WebExtensions, with the `chrome.
 - Terms: other browsers (Opera, Kiwi) do this, but it sits in a grey area of the Web Store's terms; it stays a personal-use feature, not one advertised
 
 ### Phase 12: Shipping
-- [x] **Updates** from GitHub Releases: a daily check of `jessnix.update.repo`; a bar offers to download and run the installer (asking first)
+- [x] **Updates** from GitHub Releases: a daily check of this repo's releases (fixed in the code); a bar offers to download and run the installer (asking first), and runs it only if its SHA-256 matches GitHub's checksum
 - [ ] ✋ **Code signing:** `jessnix.ps1 package` signs the installer when `JESSNIX_SIGN_CERT` points at a code-signing certificate (.pfx); buying one is the owner's
 - [x] **Settings backup:** Settings > Personalize > "Back up all my settings" / "Restore settings": every setting, saved looks and images in one `.cbsettings` file. Live sync between PCs is later
 - [ ] ✋ **Linux build:** `scripts/jessnix.sh` (init, build, ui, cpp, release, package, start); needs a Linux machine (this PC has no WSL Linux installed) to run and test

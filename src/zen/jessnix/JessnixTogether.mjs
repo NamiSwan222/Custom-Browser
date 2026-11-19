@@ -131,6 +131,11 @@ function cleanName(name) {
   return String(name || "").replace(/\s+/g, " ").trim().slice(0, 24) || "Friend";
 }
 
+// Colours from the network end up in the browser's own styles: only #rrggbb.
+function cleanColor(color) {
+  return /^#[0-9a-f]{6}$/i.test(String(color)) ? color : "#999999";
+}
+
 // What a page process may report, rebuilt from known fields only: a page's
 // process is untrusted, so nothing else it sends reaches the room.
 const PAGE_KINDS = new Set(["cursor", "cursor-hide", "scroll", "ping", "media"]);
@@ -212,6 +217,8 @@ class nsJessnixTogether {
   #overlay = null;
   #panel = null;
   #viewTimer = null;
+  // The one tab live view shows: switching to another tab never sends that one.
+  #viewBrowser = null;
   #viewBusy = false;
   isShowingView = false;
   #remoteView = null; // { from, el, img, title }
@@ -1221,7 +1228,7 @@ class nsJessnixTogether {
         break;
       case "welcome":
         this.isWaiting = false;
-        this.me = { id: message.you.id, name: this.me.name, color: message.you.color };
+        this.me = { id: message.you.id, name: this.me.name, color: cleanColor(message.you.color) };
         this.hostName = cleanName(message.host.name);
         this.#setPeers(message.peers);
         this.#startSession();
@@ -1298,7 +1305,7 @@ class nsJessnixTogether {
     this.peers.clear();
     for (const peer of list || []) {
       if (peer.id !== this.me.id) {
-        this.peers.set(peer.id, { id: peer.id, name: cleanName(peer.name), color: peer.color, isHost: !!peer.isHost });
+        this.peers.set(peer.id, { id: peer.id, name: cleanName(peer.name), color: cleanColor(peer.color), isHost: !!peer.isHost });
       }
     }
   }
@@ -1834,6 +1841,7 @@ class nsJessnixTogether {
       return;
     }
     this.isShowingView = true;
+    this.#viewBrowser = gBrowser.selectedBrowser;
     this.#viewTimer = setInterval(() => this.#sendViewFrame(), VIEW_INTERVAL_MS);
     this.#systemLine("jessnix-together-line-live");
     this.render();
@@ -1846,6 +1854,7 @@ class nsJessnixTogether {
     this.isShowingView = false;
     clearInterval(this.#viewTimer);
     this.#viewTimer = null;
+    this.#viewBrowser = null;
     this.#send({ t: "viewstop" });
     if (!quiet) {
       this.render();
@@ -1863,8 +1872,18 @@ class nsJessnixTogether {
     if (this.#viewBusy || this.#connectionBacklog() > VIEW_BACKLOG_BYTES) {
       return;
     }
-    const browser = gBrowser.selectedBrowser;
-    const global = browser?.browsingContext?.currentWindowGlobal;
+    const browser = this.#viewBrowser;
+    if (!browser?.isConnected) {
+      // The shown tab was closed.
+      this.stopView();
+      return;
+    }
+    // Only while the shown tab is the one in front (a hidden tab can't be
+    // drawn); other tabs are never sent.
+    if (browser !== gBrowser.selectedBrowser) {
+      return;
+    }
+    const global = browser.browsingContext?.currentWindowGlobal;
     if (!global) {
       return;
     }
@@ -1880,7 +1899,7 @@ class nsJessnixTogether {
       bitmap.close();
       const img = canvas.toDataURL("image/jpeg", 0.6);
       if (this.isShowingView) {
-        this.#send({ t: "view", title: String(gBrowser.selectedTab.label || "").slice(0, 120), img });
+        this.#send({ t: "view", title: String(gBrowser.getTabForBrowser(browser)?.label || "").slice(0, 120), img });
       }
     } catch (e) {
       // A page that can't be drawn (still loading, or a special page): skip.

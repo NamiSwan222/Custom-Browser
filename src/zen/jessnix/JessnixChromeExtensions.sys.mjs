@@ -15,7 +15,11 @@
 // (checkForUpdates) and converted again when there's a newer version.
 //
 // Converted extensions aren't reviewed by Mozilla (it can't sign them), so they
-// need unsigned add-ons allowed; the window module asks before that happens.
+// need unsigned add-ons allowed. The window module asks before that happens,
+// and signing is switched back on as soon as no converted extension is left
+// (restoreSigning). Every package's signature is checked against the
+// extension's own key (verifiedZipFromCrx), and an update that asks for more
+// than the installed version is never installed without the person agreeing.
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -27,6 +31,10 @@ export const ID_SUFFIX = "@chrome-store.custom-browser";
 const CHROME_VERSION = "135.0.0.0";
 const PREF_KNOWN = "jessnix.chrome-extensions.converted";
 const PREF_LAST_CHECK = "jessnix.chrome-extensions.last-update-check";
+const PREF_SIGNING = "xpinstall.signatures.required";
+// Set while signing is off because of converted extensions, so it's only ever
+// switched back on when this feature switched it off.
+const PREF_SIGNING_OFF_FOR_US = "jessnix.chrome-extensions.signing-off";
 const MAX_CRX_BYTES = 100 * 1024 * 1024;
 
 // A Web Store page: chromewebstore.google.com/detail/<name>/<id>, or the old
@@ -121,27 +129,170 @@ function binaryString(bytes) {
   return out;
 }
 
-// Strips the CRX header: "Cr24", a version, then (v3) one header of the given
-// length or (v2) a public key and a signature; the rest is the zip.
-export function zipFromCrx(bytes) {
+// Reads protobuf fields (field number -> list of byte values) from a message;
+// CRX3 headers are protobuf and only use length-delimited fields.
+function protobufFields(bytes) {
+  const fields = new Map();
+  let i = 0;
+  const varint = () => {
+    let value = 0;
+    let shift = 0;
+    while (true) {
+      if (i >= bytes.length) {
+        throw new Error("The package header is cut off.");
+      }
+      const b = bytes[i++];
+      value += (b & 0x7f) * 2 ** shift;
+      if (!(b & 0x80)) {
+        return value;
+      }
+      shift += 7;
+    }
+  };
+  while (i < bytes.length) {
+    const key = varint();
+    const field = Math.floor(key / 8);
+    const wire = key % 8;
+    if (wire === 2) {
+      const length = varint();
+      if (i + length > bytes.length) {
+        throw new Error("The package header is cut off.");
+      }
+      if (!fields.has(field)) {
+        fields.set(field, []);
+      }
+      fields.get(field).push(bytes.subarray(i, i + length));
+      i += length;
+    } else if (wire === 0) {
+      varint();
+    } else {
+      throw new Error("The package header isn't readable.");
+    }
+  }
+  return fields;
+}
+
+// The Chrome extension id of a public key: the first 16 bytes of its SHA-256,
+// each half-byte written as a letter a-p.
+async function extensionIdOf(publicKey) {
+  const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", publicKey));
+  return [...hash.subarray(0, 16)]
+    .map(b => String.fromCharCode(97 + (b >> 4)) + String.fromCharCode(97 + (b & 15)))
+    .join("");
+}
+
+// An ECDSA signature from DER (SEQUENCE of two INTEGERs) to the 64-byte r||s
+// WebCrypto wants.
+function ecdsaRaw(der) {
+  let i = 2;
+  const part = () => {
+    if (der[i] !== 0x02) {
+      throw new Error("bad signature");
+    }
+    const length = der[i + 1];
+    let value = der.subarray(i + 2, i + 2 + length);
+    i += 2 + length;
+    while (value.length > 32 && value[0] === 0) {
+      value = value.subarray(1);
+    }
+    const out = new Uint8Array(32);
+    out.set(value, 32 - value.length);
+    return out;
+  };
+  const r = part();
+  const s = part();
+  const raw = new Uint8Array(64);
+  raw.set(r, 0);
+  raw.set(s, 32);
+  return raw;
+}
+
+// Checks a .crx package and returns its zip. Only CRX3 packages are accepted:
+// the header must name `expectedId`, and one of its signatures must be made
+// with the key that id belongs to (the extension developer's key), over the
+// header and the whole zip. So a package can't be swapped or altered on the
+// way, and it can't be another extension's package.
+export async function verifiedZipFromCrx(bytes, expectedId) {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const magic = String.fromCharCode(bytes[0], bytes[1], bytes[2], bytes[3]);
-  if (magic === "PK\u0003\u0004") {
-    return bytes;
-  }
   if (magic !== "Cr24") {
     throw new Error("That download isn't a Chrome extension package.");
   }
-  const version = view.getUint32(4, true);
-  let start;
-  if (version === 3) {
-    start = 12 + view.getUint32(8, true);
-  } else if (version === 2) {
-    start = 16 + view.getUint32(8, true) + view.getUint32(12, true);
-  } else {
-    throw new Error(`Unknown Chrome package version ${version}.`);
+  if (view.getUint32(4, true) !== 3) {
+    throw new Error("That Chrome package uses an old format that can't be checked.");
   }
-  return bytes.subarray(start);
+  const headerSize = view.getUint32(8, true);
+  if (12 + headerSize > bytes.length) {
+    throw new Error("The Chrome package is cut off.");
+  }
+  const header = protobufFields(bytes.subarray(12, 12 + headerSize));
+  const zip = bytes.subarray(12 + headerSize);
+  const signedHeader = header.get(10000)?.[0];
+  const crxId = signedHeader && protobufFields(signedHeader).get(1)?.[0];
+  if (!crxId || crxId.length !== 16) {
+    throw new Error("The Chrome package doesn't say which extension it is.");
+  }
+  const idInHeader = [...crxId]
+    .map(b => String.fromCharCode(97 + (b >> 4)) + String.fromCharCode(97 + (b & 15)))
+    .join("");
+  if (idInHeader !== expectedId) {
+    throw new Error("The download is a different extension than the one asked for.");
+  }
+  // What the signatures cover.
+  const prefix = new TextEncoder().encode("CRX3 SignedData\u0000");
+  const signed = new Uint8Array(prefix.length + 4 + signedHeader.length + zip.length);
+  signed.set(prefix, 0);
+  new DataView(signed.buffer).setUint32(prefix.length, signedHeader.length, true);
+  signed.set(signedHeader, prefix.length + 4);
+  signed.set(zip, prefix.length + 4 + signedHeader.length);
+
+  const proofs = [
+    ...(header.get(2) || []).map(proof => ({ proof, kind: "rsa" })),
+    ...(header.get(3) || []).map(proof => ({ proof, kind: "ecdsa" })),
+  ];
+  for (const { proof, kind } of proofs) {
+    const parts = protobufFields(proof);
+    const publicKey = parts.get(1)?.[0];
+    const signature = parts.get(2)?.[0];
+    if (!publicKey || !signature || (await extensionIdOf(publicKey)) !== expectedId) {
+      continue;
+    }
+    try {
+      const algorithm =
+        kind === "rsa" ? { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" } : { name: "ECDSA", namedCurve: "P-256" };
+      const key = await crypto.subtle.importKey("spki", publicKey, algorithm, false, ["verify"]);
+      const ok = await crypto.subtle.verify(
+        kind === "rsa" ? algorithm : { name: "ECDSA", hash: "SHA-256" },
+        key,
+        kind === "rsa" ? signature : ecdsaRaw(signature),
+        signed
+      );
+      if (ok) {
+        return zip;
+      }
+    } catch {
+      // A key or signature that can't be read doesn't count.
+    }
+  }
+  throw new Error("The Chrome package's signature doesn't match the extension. It was not added.");
+}
+
+// Every permission and site an extension asks for, for comparing versions.
+export function permissionsOf(manifest) {
+  const asked = new Set();
+  for (const list of [manifest.permissions, manifest.host_permissions]) {
+    for (const value of Array.isArray(list) ? list : []) {
+      if (typeof value === "string") {
+        asked.add(value);
+      }
+    }
+  }
+  for (const script of Array.isArray(manifest.content_scripts) ? manifest.content_scripts : []) {
+    for (const match of Array.isArray(script?.matches) ? script.matches : []) {
+      asked.add(String(match));
+    }
+  }
+  return asked;
 }
 
 function readEntry(reader, name) {
@@ -231,7 +382,7 @@ export const JessnixChromeExtensions = {
     if (!buffer.length || buffer.length > MAX_CRX_BYTES) {
       throw new Error("The Web Store sent no package (it may be a paid or region-locked extension).");
     }
-    const zipBytes = zipFromCrx(buffer);
+    const zipBytes = await verifiedZipFromCrx(buffer, id);
     const folder = PathUtils.join(PathUtils.tempDir, "custom-browser-chrome-extensions");
     await IOUtils.makeDirectory(folder, { ignoreExisting: true });
     const path = PathUtils.join(folder, `${id}-${Date.now()}.xpi`);
@@ -320,10 +471,37 @@ export const JessnixChromeExtensions = {
     return { file, manifest, name, version: String(original.version || ""), report, id };
   },
 
-  // Remembers what was converted, for update checks.
-  remember(id, version) {
+  // Remembers what was converted, and what it may do, for update checks.
+  remember(id, version, manifest) {
     const known = this.converted;
-    known[id] = { version, checked: Date.now() };
+    known[id] = { version, checked: Date.now(), permissions: [...permissionsOf(manifest || {})] };
+    Services.prefs.setStringPref(PREF_KNOWN, JSON.stringify(known));
+  },
+
+  // Switches unsigned add-ons off for converted extensions; restoreSigning
+  // switches them back on.
+  allowUnsigned() {
+    if (Services.prefs.getBoolPref(PREF_SIGNING, true)) {
+      Services.prefs.setBoolPref(PREF_SIGNING, false);
+      Services.prefs.setBoolPref(PREF_SIGNING_OFF_FOR_US, true);
+    }
+  },
+
+  // Once no converted extension is installed, add-ons must be signed again.
+  async restoreSigning() {
+    if (!Services.prefs.getBoolPref(PREF_SIGNING_OFF_FOR_US, false)) {
+      return;
+    }
+    const addons = await lazy.AddonManager.getAddonsByTypes(["extension"]);
+    if (addons.some(addon => addon.id.endsWith(ID_SUFFIX))) {
+      return;
+    }
+    Services.prefs.clearUserPref(PREF_SIGNING);
+    Services.prefs.clearUserPref(PREF_SIGNING_OFF_FOR_US);
+    const known = this.converted;
+    for (const id of Object.keys(known)) {
+      delete known[id];
+    }
     Services.prefs.setStringPref(PREF_KNOWN, JSON.stringify(known));
   },
 
@@ -347,16 +525,18 @@ export const JessnixChromeExtensions = {
     return match ? match[1] : null;
   },
 
-  // Once a day: re-converts converted extensions that have a newer version, and
-  // installs those quietly (they were allowed when first added).
+  // Once a day: re-converts converted extensions that have a newer version.
+  // An update that asks for nothing new is installed; one that asks for more
+  // permissions or sites is left for the person to approve (returned in
+  // `needsApproval`), the way Chrome holds such updates back.
   async checkForUpdates({ force = false } = {}) {
     // Seconds (a pref int can't hold milliseconds).
     const last = Services.prefs.getIntPref(PREF_LAST_CHECK, 0) * 1000;
+    const result = { updated: [], needsApproval: [] };
     if (!force && Date.now() - last < 24 * 60 * 60 * 1000) {
-      return [];
+      return result;
     }
     Services.prefs.setIntPref(PREF_LAST_CHECK, Math.floor(Date.now() / 1000));
-    const updated = [];
     for (const [id, info] of Object.entries(this.converted)) {
       const addon = await lazy.AddonManager.getAddonByID(`${id}${ID_SUFFIX}`);
       if (!addon) {
@@ -364,17 +544,37 @@ export const JessnixChromeExtensions = {
       }
       try {
         const latest = await this.latestVersion(id);
-        if (latest && Services.vc.compare(latest, info.version) > 0) {
-          const prepared = await this.prepare(id);
-          const install = await lazy.AddonManager.getInstallForFile(prepared.file);
-          await install.install();
-          this.remember(id, prepared.version);
-          updated.push({ id, name: prepared.name, version: prepared.version });
+        if (!latest || Services.vc.compare(latest, info.version) <= 0) {
+          continue;
         }
+        const prepared = await this.prepare(id);
+        const before = new Set(info.permissions || []);
+        const added = [...permissionsOf(prepared.manifest)].filter(p => !before.has(p));
+        // No record of what the installed version asked for (added before this
+        // check existed): treat everything as new.
+        if (added.length || !Array.isArray(info.permissions)) {
+          result.needsApproval.push({ id, name: prepared.name, version: prepared.version, added });
+          continue;
+        }
+        const install = await lazy.AddonManager.getInstallForFile(prepared.file);
+        await install.install();
+        this.remember(id, prepared.version, prepared.manifest);
+        result.updated.push({ id, name: prepared.name, version: prepared.version });
       } catch (e) {
         console.warn("Chrome extension update failed for", id, e);
       }
     }
-    return updated;
+    return result;
   },
 };
+
+// Signing goes back on when the last converted extension is removed, and is
+// checked once each session in case one was removed while the browser was closed.
+lazy.AddonManager.addAddonListener({
+  onUninstalled(addon) {
+    if (addon.id.endsWith(ID_SUFFIX)) {
+      JessnixChromeExtensions.restoreSigning();
+    }
+  },
+});
+JessnixChromeExtensions.restoreSigning();

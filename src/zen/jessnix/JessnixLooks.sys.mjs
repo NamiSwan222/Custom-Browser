@@ -57,15 +57,17 @@ const PREF_TYPES = new Map(ALL_PREFS);
 
 const CODE_PREFIX = "CB1-";
 
-// Left out of settings backups: values for this computer or this run only.
+// Left out of settings backups, both when saving and when restoring: values for
+// this computer or this run only, and anything about updates, add-ons or Browse
+// Together. Backups are files people share, so one must never be able to change
+// where updates come from, allow add-ons, or pre-fill room codes, ports or
+// remembered friends.
 const BACKUP_SKIP = [
-  "jessnix.together.active",
+  "jessnix.update.",
+  "jessnix.together.",
+  "jessnix.chrome-extensions.",
   "jessnix.tabs.top.saved.",
   "jessnix.game-mode",
-  "jessnix.update.last-check",
-  "jessnix.chrome-extensions.last-update-check",
-  "jessnix.chrome-extensions.converted",
-  "jessnix.together.button-placed",
   "jessnix.personalize.icon",
   "jessnix.personalize.background",
   "jessnix.spaces.looks",

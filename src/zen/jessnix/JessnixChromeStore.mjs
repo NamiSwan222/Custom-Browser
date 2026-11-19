@@ -5,10 +5,11 @@
 // store's own button reads "Add to Custom Browser" (JessnixChromeStoreChild
 // .sys.mjs); if the store's page has changed so that button can't be found,
 // a bar offers it instead. Adding converts the extension
-// (JessnixChromeExtensions.sys.mjs), shows what will and won't work, asks once
-// to allow unsigned add-ons (Mozilla can't sign converted extensions), then
+// (JessnixChromeExtensions.sys.mjs), shows what will and won't work, asks to
+// allow unsigned add-ons while converted extensions are installed (Mozilla
+// can't sign them; it switches back when the last one is removed), then
 // installs through Firefox's own permission prompt. Converted extensions are
-// checked for updates once a day.
+// checked for updates once a day; one that wants more access waits for a yes.
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -67,7 +68,11 @@ class nsJessnixChromeStore {
       return;
     }
     const browser = gBrowser.selectedBrowser;
-    browser.browsingContext?.currentWindowGlobal?.getActor(ACTOR)?.sendAsyncMessage("start");
+    try {
+      browser.browsingContext?.currentWindowGlobal?.getActor(ACTOR)?.sendAsyncMessage("start");
+    } catch {
+      // Not a store page the actor runs on (an error page, say).
+    }
     if (existing?.dataset?.extensionId === id) {
       return;
     }
@@ -188,7 +193,7 @@ class nsJessnixChromeStore {
     if (needsUnsigned) {
       lines.push(
         "",
-        "To add it, Custom Browser has to allow add-ons that Mozilla hasn't signed. Firefox still asks before installing any add-on."
+        "To add it, Custom Browser has to accept add-ons that Mozilla hasn't checked. While you have Chrome extensions, that is true for every add-on, so only install add-ons from places you trust. It switches back as soon as you remove your last Chrome extension."
       );
     }
     if (report.verdict === "wont") {
@@ -204,21 +209,25 @@ class nsJessnixChromeStore {
       return;
     }
     if (needsUnsigned) {
-      Services.prefs.setBoolPref(PREF_SIGNING, false);
+      lazy.JessnixChromeExtensions.allowUnsigned();
     }
     try {
       const install = await lazy.AddonManager.getInstallForFile(prepared.file);
       install.addListener({
         onInstallEnded: () => {
-          lazy.JessnixChromeExtensions.remember(id, prepared.version);
+          lazy.JessnixChromeExtensions.remember(id, prepared.version, prepared.manifest);
           this.#say(`${name} was added.`);
           done();
         },
         onInstallFailed: () => {
           this.#say(`Couldn't add ${name}.`, "PRIORITY_WARNING_MEDIUM");
+          lazy.JessnixChromeExtensions.restoreSigning();
           done();
         },
-        onInstallCancelled: done,
+        onInstallCancelled: () => {
+          lazy.JessnixChromeExtensions.restoreSigning();
+          done();
+        },
       });
       // Firefox's own prompt, listing what the extension may do.
       lazy.AddonManager.installAddonFromAOM(gBrowser.selectedBrowser, gBrowser.currentURI, install);
@@ -231,12 +240,39 @@ class nsJessnixChromeStore {
 
   async checkUpdates(options) {
     try {
-      const updated = await lazy.JessnixChromeExtensions.checkForUpdates(options);
-      return updated;
+      const result = await lazy.JessnixChromeExtensions.checkForUpdates(options);
+      for (const item of result.needsApproval) {
+        this.#askAboutUpdate(item);
+      }
+      return result.updated;
     } catch (e) {
       console.warn("Chrome extension updates:", e);
       return [];
     }
+  }
+
+  // An update that wants more than the installed version: a bar that says what,
+  // and installs only through the normal add flow (with Firefox's prompt).
+  #askAboutUpdate({ id, name, version, added }) {
+    const box = this.#box;
+    const what = added.length ? ` It asks for more access: ${added.slice(0, 5).join(", ")}${added.length > 5 ? ", …" : ""}.` : "";
+    box.appendNotification(
+      `${BAR_ID}-update-${id}`,
+      {
+        label: `${name} ${version} is available.${what} It won't be installed unless you agree.`,
+        priority: box.PRIORITY_INFO_MEDIUM,
+      },
+      [
+        {
+          label: "Review and update",
+          accessKey: "R",
+          callback: () => {
+            this.add(id);
+            return false;
+          },
+        },
+      ]
+    );
   }
 }
 
