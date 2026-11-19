@@ -68,8 +68,8 @@ Custom-Browser/
 - [x] **Updater off** (`--disable-updater`), so Zen's server can never replace Custom Browser with Zen
 - [x] About page, post-update notice and uninstall page link to the project's GitHub; Zen's donate and privacy-policy links removed
 - [x] Own profile name `jessnix` and vendor, so it never shares data with Zen or Firefox
-- [ ] Wordmark (the name drawn as an image) in the browser's own type: waits for `DESIGN.md`
-- [ ] Remaining Zen services: Zen mods store, `share.zen-browser.app` (review in Phase 2)
+- [ ] ✋ Wordmark (the name drawn as an image) in the browser's own type: waits for the owner's `DESIGN.md`
+- [x] Remaining Zen services reviewed, both kept: the mods store only downloads `theme.json` of installed mods from `zen-browser.github.io` (every 20 days; nothing sent), and the store page at `zen-browser.app` can install mods only when opened. `share.zen-browser.app` is contacted only when the owner shares something. Zen's donate button in the Library footer removed
 - [x] Windows installer (`scripts/jessnix.ps1 package`): `dist/Custom-Browser-<version>-setup.exe`, with uBlock Origin inside. Not code-signed yet (SmartScreen warns)
 
 ### Phase 2: Privacy defaults (the LibreWolf + Brave layer)
@@ -79,8 +79,8 @@ Zen already turns off Mozilla telemetry, studies and crash-report sending (`pref
 - [x] Tracking parameters stripped from links
 - [x] Fingerprinting protection (Firefox's, without the site breakage of full resistFingerprinting)
 - [x] WebRTC IP-leak protection, cross-site referrers trimmed to the origin
-- [ ] Default search: DuckDuckGo (Firefox only lets a policy or its search config change it; decide which)
-- [ ] Optional: clear cookies/history on exit, with a per-site keep list (Firefox has per-site "delete on close" already)
+- [x] Default search: DuckDuckGo, chosen once on a profile's first run (normal and private windows); picking another engine afterwards sticks (`JessnixUpdates.mjs`, pref `jessnix.search.default-set`)
+- [x] Clear on exit with a keep list: Firefox's own Settings > Privacy > "Delete cookies and site data when Custom Browser is closed" plus Manage Exceptions (allow) does exactly this; nothing extra built. Off by default, since logins stay remembered
 
 **Brave features, and where they come from in Custom Browser.** Crypto (Rewards, Wallet), the paid VPN, Leo AI and Brave News are left out on purpose.
 
@@ -104,10 +104,10 @@ Zen already turns off Mozilla telemetry, studies and crash-report sending (`pref
 - [x] Release build (`scripts/jessnix.ps1 release`: Zen release settings, thin LTO; 31 min clean). Switching between dev and release clears the old build output (the wrapper does it)
 - [x] Faster dev builds: sccache used locally (Zen only turned it on in CI), no debug symbols and no test code in dev builds, `jessnix.ps1 cpp [dir]` for quick C++/Rust rebuilds, and `start` clears the profile's startup cache so `ui` changes show
 - [x] Hebrew language pack and spellcheck included (`scripts/fetch_hebrew.py`)
-- [ ] Tab unloading on, hardware video decode confirmed
-- [ ] Bookmark/password import from Chrome/Edge works
+- [x] Tab unloading on low memory (on by default, also set in `daily.yaml`); hardware video decode on (checked on an RTX 3080 in about:support)
+- [x] Import from Chrome/Edge (File > Import): finds both profiles; Edge offers passwords and history. Chrome 127+ encrypts passwords so only Chrome itself can read them: export them from Chrome as a CSV and import that file (Passwords page > ⋯ > Import from a file)
 - [x] Updates: from GitHub Releases (Phase 12)
-- [ ] Sync: decide between Firefox Sync (Mozilla account) and none
+- [ ] ✋ Sync: the owner decides between Firefox Sync (Mozilla account, works today from the account menu) and turning it off
 
 ### Phase 4: Custom Browser features (what makes it mine)
 Each feature lives in `src/zen/jessnix/` (or its own folder) and gets a note in `docs/jessnix/`.

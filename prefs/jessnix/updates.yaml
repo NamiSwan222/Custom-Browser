@@ -12,3 +12,7 @@
   value: 0
 - name: jessnix.update.skip-version
   value: ""
+
+# DuckDuckGo was made the default search on this profile's first run.
+- name: jessnix.search.default-set
+  value: false

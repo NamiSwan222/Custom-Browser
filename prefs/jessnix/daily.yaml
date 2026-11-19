@@ -17,3 +17,8 @@
 # Show the bookmark star in the address bar (Zen hides it; see zen-omnibox.css).
 - name: jessnix.urlbar.show-bookmark-star
   value: true
+
+# Unload background tabs when Windows runs low on memory (Firefox brings a
+# tab back when it's selected).
+- name: browser.tabs.unloadOnLowMemory
+  value: true

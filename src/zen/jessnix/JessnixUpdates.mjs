@@ -14,6 +14,7 @@ const PREF_LAST = "jessnix.update.last-check";
 const PREF_SKIP = "jessnix.update.skip-version";
 const DAY = 24 * 60 * 60 * 1000;
 const BAR_ID = "jessnix-update";
+const PREF_SEARCH_SET = "jessnix.search.default-set";
 
 // "v0.1.10" -> [0, 1, 10]
 function parts(version) {
@@ -39,7 +40,31 @@ class nsJessnixUpdates {
     if ([...Services.wm.getEnumerator("navigator:browser")][0] !== window) {
       return;
     }
+    this.#searchDefaultOnce();
     setTimeout(() => this.check().catch(e => console.warn("Update check:", e)), 90 * 1000);
+  }
+
+  // PLAN.md Phase 2: DuckDuckGo as the default search, set once on a profile's
+  // first run (the search service keeps no default of its own to configure).
+  // Choosing another engine afterwards sticks.
+  async #searchDefaultOnce() {
+    if (Services.prefs.getBoolPref(PREF_SEARCH_SET, false)) {
+      return;
+    }
+    try {
+      const { SearchService } = ChromeUtils.importESModule(
+        "moz-src:///toolkit/components/search/SearchService.sys.mjs"
+      );
+      await SearchService.init();
+      const engine = SearchService.getEngineByName("DuckDuckGo");
+      if (engine) {
+        await SearchService.setDefault(engine, SearchService.CHANGE_REASON.USER);
+        await SearchService.setDefaultPrivate?.(engine, SearchService.CHANGE_REASON.USER_PRIVATE_SPLIT);
+      }
+      Services.prefs.setBoolPref(PREF_SEARCH_SET, true);
+    } catch (e) {
+      console.warn("Default search:", e);
+    }
   }
 
   get currentVersion() {
