@@ -31,6 +31,7 @@
     "chrome://browser/content/zen-components/JessnixPersonalize.mjs",
     "chrome://browser/content/zen-components/JessnixTopTabs.mjs",
     "chrome://browser/content/zen-components/JessnixTogether.mjs",
+    "chrome://browser/content/zen-components/JessnixLookExtras.mjs",
   ];
 
   for (let script of scripts) {

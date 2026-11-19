@@ -13,5 +13,7 @@
         content/browser/zen-components/JessnixTogetherNet.mjs                   (../../zen/jessnix/JessnixTogetherNet.mjs)
         content/browser/zen-components/JessnixTogetherChild.sys.mjs             (../../zen/jessnix/JessnixTogetherChild.sys.mjs)
         content/browser/zen-components/JessnixTogetherParent.sys.mjs            (../../zen/jessnix/JessnixTogetherParent.sys.mjs)
+        content/browser/zen-components/JessnixLooks.sys.mjs                    (../../zen/jessnix/JessnixLooks.sys.mjs)
+        content/browser/zen-components/JessnixLookExtras.mjs                  (../../zen/jessnix/JessnixLookExtras.mjs)
         content/browser/zen-styles/jessnix-together.css                         (../../zen/jessnix/jessnix-together.css)
         content/browser/preferences/jessnix-settings.js                         (../../zen/jessnix/jessnix-settings.js)

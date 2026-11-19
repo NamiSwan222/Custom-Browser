@@ -250,7 +250,7 @@
   }
   & .tabbrowser-tab {
     align-self: flex-end !important;
-    height: 38px !important;
+    height: calc(var(--jessnix-tab-height) + 6px) !important;
     margin-bottom: 0 !important;
   }
   & .tabbrowser-tab .tab-background {

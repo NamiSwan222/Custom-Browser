@@ -73,10 +73,96 @@
       </menupopup>
     </menulist>
   </hbox>
+  <checkbox id="jessnixLookAddressBottom" data-l10n-id="jessnix-look-address-bottom"
+            data-jessnix-pref="jessnix.look.address-bar-bottom" data-jessnix-type="bool"/>
   <checkbox id="jessnixLookLabels" data-l10n-id="jessnix-look-labels"
             data-jessnix-pref="jessnix.look.button-labels" data-jessnix-type="bool"/>
   <checkbox id="jessnixLookWindowButtons" data-l10n-id="jessnix-look-window-buttons"
             data-jessnix-pref="zen.view.hide-window-controls" data-jessnix-type="bool" data-jessnix-inverted="true"/>
+
+  <label><html:h2 data-l10n-id="jessnix-tabstyle-header"/></label>
+  <description class="description-deemphasized" data-l10n-id="jessnix-tabstyle-description"/>
+  <hbox align="center">
+    <label style="min-width: 9em;" control="jessnixTabHeight" data-l10n-id="jessnix-tabstyle-height"/>
+    <menulist id="jessnixTabHeight" data-jessnix-pref="jessnix.tabs.style.height" data-jessnix-type="int">
+      <menupopup>
+        <menuitem data-l10n-id="jessnix-option-default" value="0"/>
+        <menuitem data-l10n-id="jessnix-tabstyle-height-small" value="1"/>
+        <menuitem data-l10n-id="jessnix-tabstyle-height-medium" value="2"/>
+        <menuitem data-l10n-id="jessnix-tabstyle-height-large" value="3"/>
+      </menupopup>
+    </menulist>
+  </hbox>
+  <hbox align="center">
+    <label style="min-width: 9em;" control="jessnixTabShape" data-l10n-id="jessnix-tabstyle-shape"/>
+    <menulist id="jessnixTabShape" data-jessnix-pref="jessnix.tabs.style.shape" data-jessnix-type="int">
+      <menupopup>
+        <menuitem data-l10n-id="jessnix-tabstyle-shape-rounded" value="0"/>
+        <menuitem data-l10n-id="jessnix-tabstyle-shape-square" value="1"/>
+        <menuitem data-l10n-id="jessnix-tabstyle-shape-pill" value="2"/>
+      </menupopup>
+    </menulist>
+  </hbox>
+  <hbox align="center">
+    <label style="min-width: 9em;" control="jessnixTabClose" data-l10n-id="jessnix-tabstyle-close"/>
+    <menulist id="jessnixTabClose" data-jessnix-pref="jessnix.tabs.style.close" data-jessnix-type="int">
+      <menupopup>
+        <menuitem data-l10n-id="jessnix-tabstyle-close-hover" value="0"/>
+        <menuitem data-l10n-id="jessnix-tabstyle-close-always" value="1"/>
+        <menuitem data-l10n-id="jessnix-tabstyle-close-never" value="2"/>
+      </menupopup>
+    </menulist>
+  </hbox>
+  <checkbox id="jessnixTabFaviconOnly" data-l10n-id="jessnix-tabstyle-favicon-only"
+            data-jessnix-pref="jessnix.tabs.style.favicon-only" data-jessnix-type="bool"/>
+
+  <label><html:h2 data-l10n-id="jessnix-text-header"/></label>
+  <description class="description-deemphasized" data-l10n-id="jessnix-text-description"/>
+  <hbox align="center">
+    <label style="min-width: 9em;" control="jessnixLookFont" data-l10n-id="jessnix-text-font"/>
+    <menulist id="jessnixLookFont" sizetopopup="none" style="max-width: 20em;">
+      <menupopup id="jessnixLookFontPopup">
+        <menuitem data-l10n-id="jessnix-option-default" value=""/>
+      </menupopup>
+    </menulist>
+  </hbox>
+  <hbox align="center">
+    <label style="min-width: 9em;" control="jessnixLookFontSize" data-l10n-id="jessnix-text-size"/>
+    <menulist id="jessnixLookFontSize" data-jessnix-pref="jessnix.look.ui-font-size" data-jessnix-type="int">
+      <menupopup>
+        <menuitem data-l10n-id="jessnix-option-default" value="0"/>
+        <menuitem label="12" value="12"/>
+        <menuitem label="13" value="13"/>
+        <menuitem label="14" value="14"/>
+        <menuitem label="15" value="15"/>
+        <menuitem label="16" value="16"/>
+        <menuitem label="18" value="18"/>
+        <menuitem label="20" value="20"/>
+      </menupopup>
+    </menulist>
+  </hbox>
+
+  <label><html:h2 data-l10n-id="jessnix-window-header"/></label>
+  <description class="description-deemphasized" data-l10n-id="jessnix-window-description"/>
+  <hbox align="center">
+    <label style="min-width: 9em;" control="jessnixLookSeeThrough" data-l10n-id="jessnix-window-see-through"/>
+    <menulist id="jessnixLookSeeThrough" data-jessnix-pref="jessnix.look.see-through" data-jessnix-type="int">
+      <menupopup>
+        <menuitem data-l10n-id="jessnix-window-see-through-off" value="0"/>
+        <menuitem data-l10n-id="jessnix-window-see-through-light" value="25"/>
+        <menuitem data-l10n-id="jessnix-window-see-through-medium" value="50"/>
+        <menuitem data-l10n-id="jessnix-window-see-through-strong" value="75"/>
+      </menupopup>
+    </menulist>
+  </hbox>
+  <checkbox id="jessnixLookSchedule" data-l10n-id="jessnix-window-schedule"
+            data-jessnix-pref="jessnix.look.schedule" data-jessnix-type="bool"/>
+  <hbox align="center" id="jessnixLookScheduleTimes">
+    <label control="jessnixLookDarkFrom" data-l10n-id="jessnix-window-dark-from"/>
+    <html:input id="jessnixLookDarkFrom" type="time"/>
+    <label control="jessnixLookLightFrom" data-l10n-id="jessnix-window-light-from"/>
+    <html:input id="jessnixLookLightFrom" type="time"/>
+  </hbox>
 
   <label><html:h2 data-l10n-id="jessnix-personalize-name-header"/></label>
   <description class="description-deemphasized" data-l10n-id="jessnix-personalize-name-description"/>
@@ -121,6 +207,40 @@
     <html:input id="jessnixPersonalizeAccent" type="color"/>
     <button id="jessnixPersonalizeAccentReset" data-l10n-id="jessnix-personalize-accent-system"/>
   </hbox>
+  <vbox id="jessnixPersonalizeSwatchesBox" hidden="true">
+    <description class="description-deemphasized" data-l10n-id="jessnix-personalize-swatches"/>
+    <html:div id="jessnixPersonalizeSwatches"/>
+  </vbox>
+
+  <label><html:h2 data-l10n-id="jessnix-looks-header"/></label>
+  <description class="description-deemphasized" data-l10n-id="jessnix-looks-description"/>
+  <hbox align="center">
+    <menulist id="jessnixLooksList" sizetopopup="none" style="min-width: 12em;">
+      <menupopup id="jessnixLooksPopup"/>
+    </menulist>
+    <button id="jessnixLooksApply" data-l10n-id="jessnix-looks-apply"/>
+    <button id="jessnixLooksDelete" data-l10n-id="jessnix-looks-delete"/>
+  </hbox>
+  <hbox align="center">
+    <html:input id="jessnixLooksName" type="text" maxlength="40" data-l10n-id="jessnix-looks-name"/>
+    <button id="jessnixLooksSave" data-l10n-id="jessnix-looks-save"/>
+  </hbox>
+  <hbox align="center">
+    <button id="jessnixLooksExport" data-l10n-id="jessnix-looks-export"/>
+    <button id="jessnixLooksImport" data-l10n-id="jessnix-looks-import"/>
+    <button id="jessnixLooksCopyCode" data-l10n-id="jessnix-looks-copy-code"/>
+  </hbox>
+  <hbox align="center">
+    <html:input id="jessnixLooksCode" type="text" data-l10n-id="jessnix-looks-code"/>
+    <button id="jessnixLooksUseCode" data-l10n-id="jessnix-looks-use-code"/>
+  </hbox>
+  <hbox align="center">
+    <button id="jessnixLooksUndo" data-l10n-id="jessnix-looks-undo"/>
+    <button id="jessnixLooksResetLayout" data-l10n-id="jessnix-looks-reset-layout"/>
+    <button id="jessnixLooksResetColors" data-l10n-id="jessnix-looks-reset-colors"/>
+    <button id="jessnixLooksResetAll" data-l10n-id="jessnix-looks-reset-all"/>
+  </hbox>
+  <description id="jessnixLooksStatus" class="description-deemphasized" hidden="true"/>
 
   <description id="jessnixPersonalizeError" class="description-deemphasized" hidden="true"/>
 </groupbox>
