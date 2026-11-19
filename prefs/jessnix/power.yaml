@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 NamiSwan222. See LICENSE-MIT.
+
+# Power features (src/zen/jessnix/JessnixPower.mjs).
+
+# Game mode: background tabs unloaded and paused, memory freed, compact mode.
+- name: jessnix.game-mode
+  value: false
+
+# Notes per site (JSON: host -> text), from the command palette's "Notes for
+# this site".
+- name: jessnix.site-notes
+  value: "{}"
