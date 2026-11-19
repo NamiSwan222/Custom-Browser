@@ -56,12 +56,11 @@ function setPref(pref, value) {
     Services.prefs.setBoolPref(pref, value);
   }
 }
-// Zen's compact mode hides the sidebar until hovered; with tabs on top that
-// leaves an empty row and pushes the tabs into the address bar row. It is held
-// off while tabs are on top (its button is hidden, jessnix-top-tabs.css), and
-// given back afterwards. It is not a pref Zen watches, so it is set through
-// Zen's compact-mode manager.
+// Compact mode with tabs on top is an auto-hiding tab row (jessnix-top-tabs.css).
+// An earlier version held compact mode off instead and saved the person's choice
+// here; it is still given back when tabs go to the side.
 const SAVED_COMPACT = SAVED_PREFIX + "compact-mode";
+const MENU_ITEM_IDS = ["jessnix-tabs-top-toolbar-item", "jessnix-tabs-top-tab-item"];
 
 const ROOT_ATTRIBUTE = "jessnix-top-tabs";
 // Marks a flex="1" this module removed, so it can be put back.
@@ -70,7 +69,6 @@ const REMOVED_FLEX = "jessnix-removed-flex";
 class nsJessnixTopTabs {
   #isRunning = false;
   #mutationObserver = null;
-  #compactObserver = null;
   #isApplyQueued = false;
 
   init() {
@@ -95,7 +93,36 @@ class nsJessnixTopTabs {
     );
     // Zen ends every layout update by firing "resize" on the window.
     window.addEventListener("resize", () => this.#queueApply());
+    this.#addMenuItems();
     this.#update();
+  }
+
+  // "Tabs on top" in the right-click menus of the tab row and of a tab.
+  #addMenuItems() {
+    const menus = [
+      [document.getElementById("toolbar-context-menu"), MENU_ITEM_IDS[0]],
+      [document.getElementById("tabContextMenu"), MENU_ITEM_IDS[1]],
+    ];
+    for (const [menu, id] of menus) {
+      if (!menu || document.getElementById(id)) {
+        continue;
+      }
+      const separator = document.createXULElement("menuseparator");
+      const item = document.createXULElement("menuitem");
+      item.id = id;
+      item.setAttribute("type", "checkbox");
+      item.setAttribute("label", "Tabs on top");
+      item.setAttribute("accesskey", "T");
+      item.addEventListener("command", () =>
+        Services.prefs.setBoolPref(PREF_TOP, item.hasAttribute("checked") || item.getAttribute("checked") === "true")
+      );
+      menu.addEventListener("popupshowing", event => {
+        if (event.target === menu) {
+          item.toggleAttribute("checked", this.isOn);
+        }
+      });
+      menu.append(separator, item);
+    }
   }
 
   get isOn() {
@@ -137,8 +164,6 @@ class nsJessnixTopTabs {
       root.removeAttribute(ROOT_ATTRIBUTE);
       this.#mutationObserver?.disconnect();
       this.#mutationObserver = null;
-      this.#compactObserver?.disconnect();
-      this.#compactObserver = null;
       this.#restore();
       if (Services.prefs.getBoolPref(SAVED_COMPACT, false)) {
         Services.prefs.clearUserPref(SAVED_COMPACT);
@@ -178,31 +203,7 @@ class nsJessnixTopTabs {
     ].filter(Boolean);
   }
 
-  // Turns compact mode off when it comes on (its button, Ctrl+S, or Zen
-  // restoring it at startup). Zen ignores the change mid-animation, so this
-  // runs again when the animation attribute goes.
-  #holdCompactOff() {
-    const root = document.documentElement;
-    if (
-      !this.isOn ||
-      !gZenCompactModeManager.preference ||
-      root.hasAttribute("zen-compact-animating")
-    ) {
-      return;
-    }
-    Services.prefs.setBoolPref(SAVED_COMPACT, true);
-    gZenCompactModeManager.preference = false;
-  }
-
   #watch() {
-    if (!this.#compactObserver) {
-      this.#compactObserver = new MutationObserver(() => this.#holdCompactOff());
-      this.#compactObserver.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ["zen-compact-mode", "zen-compact-animating"],
-      });
-      this.#holdCompactOff();
-    }
     if (this.#mutationObserver) {
       return;
     }
