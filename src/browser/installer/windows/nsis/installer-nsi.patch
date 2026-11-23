@@ -1,8 +1,8 @@
 diff --git a/browser/installer/windows/nsis/installer.nsi b/browser/installer/windows/nsis/installer.nsi
-index bdae08d33338d9ac65e626b3c5d393e205348fba..df59e323c3fb4bf681668f02aeaf44740c855275 100644
+index bdae08d33338d9ac65e626b3c5d393e205348fba..e3fba2475709097809fe6934c32c55059f860367 100644
 --- a/browser/installer/windows/nsis/installer.nsi
 +++ b/browser/installer/windows/nsis/installer.nsi
-@@ -244,6 +244,36 @@ ChangeUI IDD_VERIFY "${NSISDIR}\Contrib\UIs\default.exe"
+@@ -244,6 +244,50 @@ ChangeUI IDD_VERIFY "${NSISDIR}\Contrib\UIs\default.exe"
  # Install Sections
  
  ; Cleanup operations to perform at the start of the installation.
@@ -29,6 +29,20 @@ index bdae08d33338d9ac65e626b3c5d393e205348fba..df59e323c3fb4bf681668f02aeaf4474
 +    ${OrIf} $2 == "$3\jessnix.exe"
 +      ShellLink::SetShortCutTarget "${DIR}\$1" "$INSTDIR\${FileMainEXE}"
 +      ${LogMsg} "Pointed shortcut at ${FileMainEXE}: ${DIR}\$1"
++      ; Its icon is either the old program file, or one chosen in Personalize:
++      ; a file in the data folder, which is renamed at the next start
++      ; (toolkit/xre/CustomProfileMove.h, zen/custom/CustomMigration.sys.mjs).
++      ShellLink::GetShortCutIconLocation "${DIR}\$1"
++      Pop $4
++      ${WordReplace} "$4" "\jessnix\Profiles\" "\custom-browser\Profiles\" "+" $5
++      ${WordReplace} "$5" "\jessnix\icon-" "\custom-browser\icon-" "+" $5
++      ${If} $4 == "$INSTDIR\jessnix.exe"
++      ${OrIf} $4 == "$3\jessnix.exe"
++        StrCpy $5 "$INSTDIR\${FileMainEXE}"
++      ${EndIf}
++      ${If} $5 != $4
++        ShellLink::SetShortCutIconLocation "${DIR}\$1" "$5"
++      ${EndIf}
 +    ${EndIf}
 +    ClearErrors
 +    FindNext $0 $1
@@ -39,7 +53,7 @@ index bdae08d33338d9ac65e626b3c5d393e205348fba..df59e323c3fb4bf681668f02aeaf4474
  Section "-InstallStartCleanup"
    System::Call "kernel32::GetTickCount()l .s"
    Pop $InstallPhaseStart
-@@ -644,6 +674,35 @@ Section "-Application" APP_IDX
+@@ -644,6 +688,35 @@ Section "-Application" APP_IDX
      ${AddPrivateBrowsingShortcut}
    ${EndIf}
  
@@ -75,7 +89,7 @@ index bdae08d33338d9ac65e626b3c5d393e205348fba..df59e323c3fb4bf681668f02aeaf4474
    ; Update lastwritetime of the Start Menu shortcut to clear the tile cache.
    ; Do this for both shell contexts in case the user has shortcuts in multiple
    ; locations, then restore the previous context at the end.
-@@ -859,7 +918,7 @@ Section "-InstallEndCleanup"
+@@ -859,7 +932,7 @@ Section "-InstallEndCleanup"
    ; When we're using the GUI, .onGUIEnd sends the ping, but of course that isn't
    ; invoked when we're running silently.
    ${If} ${Silent}
@@ -84,7 +98,7 @@ index bdae08d33338d9ac65e626b3c5d393e205348fba..df59e323c3fb4bf681668f02aeaf4474
    ${EndIf}
  SectionEnd
  
-@@ -1813,5 +1872,5 @@ FunctionEnd
+@@ -1813,5 +1886,5 @@ FunctionEnd
  
  Function .onGUIEnd
    ${OnEndCommon}
