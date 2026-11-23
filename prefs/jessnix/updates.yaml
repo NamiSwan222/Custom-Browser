@@ -12,6 +12,10 @@
 - name: jessnix.update.skip-version
   value: ""
 
-# DuckDuckGo was made the default search on this profile's first run.
+# The default search step (JessnixUpdates.mjs) ran on this profile: version 2
+# makes Google the default. default-set is version 1's flag (DuckDuckGo), kept
+# so a profile from then is recognised.
+- name: jessnix.search.default-version
+  value: 0
 - name: jessnix.search.default-set
   value: false

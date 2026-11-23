@@ -123,6 +123,10 @@ jessnix-tabstyle-close-never =
 jessnix-tabstyle-favicon-only =
     .label = Show only the site's icon on tabs
 
+jessnix-search-header = Search
+jessnix-search-description = The search engine for the address bar and the new tab page, in normal and private windows.
+jessnix-search-engine = Search engine
+
 jessnix-text-header = Text
 jessnix-text-description = The browser's own font and text size. Web pages keep theirs; use zoom for those.
 jessnix-text-font = Font

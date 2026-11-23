@@ -70,6 +70,7 @@ var gJessnixPersonalizeSettings = {
       .addEventListener("command", () => this.setAccent(JESSNIX_SYSTEM_ACCENT));
 
     this.initLayoutControls();
+    this.initSearch();
     this.initFonts();
     this.initSchedule();
     this.initLooks();
@@ -179,6 +180,54 @@ var gJessnixPersonalizeSettings = {
       },
       { once: true }
     );
+  },
+
+  // Search: the default engine, out of the ones the search service has. The
+  // choice applies to private windows too. Firefox's own Search pane changes the
+  // same setting, so the list follows the service instead of a pref.
+  async initSearch() {
+    const menulist = document.getElementById("jessnixSearchEngine");
+    const popup = document.getElementById("jessnixSearchEnginePopup");
+    const { SearchService } = ChromeUtils.importESModule(
+      "moz-src:///toolkit/components/search/SearchService.sys.mjs"
+    );
+    const sync = async () => {
+      const engines = await SearchService.getVisibleEngines();
+      popup.replaceChildren();
+      for (const engine of engines) {
+        const item = document.createXULElement("menuitem");
+        item.setAttribute("label", engine.name);
+        item.setAttribute("value", engine.name);
+        popup.appendChild(item);
+      }
+      menulist.value = SearchService.defaultEngine?.name || "";
+    };
+    menulist.addEventListener("command", async () => {
+      const engine = SearchService.getEngineByName(menulist.value);
+      if (!engine) {
+        return;
+      }
+      await SearchService.setDefault(engine, SearchService.CHANGE_REASON.USER);
+      // Only differs when private windows have their own engine.
+      if (SearchService.defaultPrivateEngine?.name !== engine.name) {
+        await SearchService.setDefaultPrivate(engine, SearchService.CHANGE_REASON.USER_PRIVATE_SPLIT);
+      }
+    });
+    const observer = {
+      observe: () => sync().catch(e => console.error("Personalize: search engines", e)),
+    };
+    Services.obs.addObserver(observer, "browser-search-engine-modified");
+    window.addEventListener(
+      "unload",
+      () => Services.obs.removeObserver(observer, "browser-search-engine-modified"),
+      { once: true }
+    );
+    try {
+      await SearchService.init();
+      await sync();
+    } catch (e) {
+      console.error("Personalize: cannot list search engines", e);
+    }
   },
 
   // Text: every font installed on this computer.

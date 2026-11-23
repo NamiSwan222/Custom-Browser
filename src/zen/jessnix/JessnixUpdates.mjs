@@ -23,7 +23,12 @@ const PREF_LAST = "jessnix.update.last-check";
 const PREF_SKIP = "jessnix.update.skip-version";
 const DAY = 24 * 60 * 60 * 1000;
 const BAR_ID = "jessnix-update";
+// Version 1 of the default search step (DuckDuckGo) set this flag.
 const PREF_SEARCH_SET = "jessnix.search.default-set";
+const PREF_SEARCH_VERSION = "jessnix.search.default-version";
+const SEARCH_VERSION = 2;
+const SEARCH_DEFAULT = "Google";
+const SEARCH_OLD_DEFAULT = "DuckDuckGo";
 
 // "v0.1.10" -> [0, 1, 10]
 function parts(version) {
@@ -53,11 +58,13 @@ class nsJessnixUpdates {
     setTimeout(() => this.check().catch(e => console.warn("Update check:", e)), 90 * 1000);
   }
 
-  // PLAN.md Phase 2: DuckDuckGo as the default search, set once on a profile's
-  // first run (the search service keeps no default of its own to configure).
-  // Choosing another engine afterwards sticks.
+  // PLAN.md Phase 2: Google as the default search, set once per profile (the
+  // search service keeps no default of its own to configure). Version 1 of this
+  // step chose DuckDuckGo: a profile still on that moves to Google once, and
+  // any other engine was the person's own pick, so it stays. Choosing another
+  // engine afterwards sticks (Settings > Personalize > Search).
   async #searchDefaultOnce() {
-    if (Services.prefs.getBoolPref(PREF_SEARCH_SET, false)) {
+    if (Services.prefs.getIntPref(PREF_SEARCH_VERSION, 0) >= SEARCH_VERSION) {
       return;
     }
     try {
@@ -65,12 +72,18 @@ class nsJessnixUpdates {
         "moz-src:///toolkit/components/search/SearchService.sys.mjs"
       );
       await SearchService.init();
-      const engine = SearchService.getEngineByName("DuckDuckGo");
-      if (engine) {
-        await SearchService.setDefault(engine, SearchService.CHANGE_REASON.USER);
-        await SearchService.setDefaultPrivate?.(engine, SearchService.CHANGE_REASON.USER_PRIVATE_SPLIT);
+      const engine = SearchService.getEngineByName(SEARCH_DEFAULT);
+      if (engine && !engine.hidden) {
+        const firstRun = !Services.prefs.getBoolPref(PREF_SEARCH_SET, false);
+        if (firstRun || SearchService.defaultEngine?.name === SEARCH_OLD_DEFAULT) {
+          await SearchService.setDefault(engine, SearchService.CHANGE_REASON.USER);
+        }
+        // Only differs from the engine above when private windows have their own.
+        if (SearchService.defaultPrivateEngine?.name === SEARCH_OLD_DEFAULT) {
+          await SearchService.setDefaultPrivate(engine, SearchService.CHANGE_REASON.USER_PRIVATE_SPLIT);
+        }
       }
-      Services.prefs.setBoolPref(PREF_SEARCH_SET, true);
+      Services.prefs.setIntPref(PREF_SEARCH_VERSION, SEARCH_VERSION);
     } catch (e) {
       console.warn("Default search:", e);
     }

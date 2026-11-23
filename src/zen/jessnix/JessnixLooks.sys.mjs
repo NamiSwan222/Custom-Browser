@@ -66,6 +66,7 @@ const BACKUP_SKIP = [
   "jessnix.update.",
   "jessnix.together.",
   "jessnix.chrome-extensions.",
+  "jessnix.search.",
   "jessnix.tabs.top.saved.",
   "jessnix.game-mode",
   "jessnix.personalize.icon",
