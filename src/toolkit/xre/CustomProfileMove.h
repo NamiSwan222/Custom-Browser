@@ -12,6 +12,10 @@
 //
 // Called from nsXREDirProvider::GetUserDataDirectory, before the data folder
 // is created. The move is one rename: it happens whole or not at all.
+//
+// Only the browser itself moves the folder. A background task (the one the
+// installer runs, the default-browser check) has no window to explain a failed
+// move with, so it keeps using the old folder until the browser has moved it.
 
 #include <windows.h>
 
@@ -22,9 +26,10 @@
 #  include "mozilla/BackgroundTasks.h"
 #endif
 
-// aDir: the data folder about to be used. aProfileName: MOZ_APP_PROFILE.
+// aDir: the data folder about to be used; set to the old folder when a
+// background task should keep using it. aProfileName: MOZ_APP_PROFILE.
 // aLocal: the cache folder (%LOCALAPPDATA%), which is fine to start empty.
-inline nsresult CustomBrowserMoveOldUserData(nsIFile* aDir,
+inline nsresult CustomBrowserMoveOldUserData(nsCOMPtr<nsIFile>& aDir,
                                              const char* aProfileName,
                                              bool aLocal) {
   static const wchar_t kOldName[] = L"jessnix";
@@ -53,6 +58,13 @@ inline nsresult CustomBrowserMoveOldUserData(nsIFile* aDir,
     return NS_OK;
   }
 
+#ifdef MOZ_BACKGROUNDTASKS
+  if (mozilla::BackgroundTasks::IsBackgroundTaskMode()) {
+    aDir = old;
+    return NS_OK;
+  }
+#endif
+
   nsAutoString from, to;
   if (NS_FAILED(old->GetPath(from)) || NS_FAILED(aDir->GetPath(to))) {
     return NS_OK;
@@ -67,17 +79,11 @@ inline nsresult CustomBrowserMoveOldUserData(nsIFile* aDir,
   // Something still has the old folder open (an older copy of the browser
   // that is still running, most likely). Starting with an empty folder would
   // look like every login was lost, so stop here; the next start tries again.
-  bool quiet = false;
-#ifdef MOZ_BACKGROUNDTASKS
-  quiet = mozilla::BackgroundTasks::IsBackgroundTaskMode();
-#endif
-  if (!quiet) {
-    ::MessageBoxW(nullptr,
-                  L"Custom Browser is moving your profile to its new folder, "
-                  L"but something still has the old folder open.\n\n"
-                  L"Close every Custom Browser window, then start it again.",
-                  L"Custom Browser", MB_OK | MB_ICONWARNING | MB_SETFOREGROUND);
-  }
+  ::MessageBoxW(nullptr,
+                L"Custom Browser is moving your profile to its new folder, "
+                L"but something still has the old folder open.\n\n"
+                L"Close every Custom Browser window, then start it again.",
+                L"Custom Browser", MB_OK | MB_ICONWARNING | MB_SETFOREGROUND);
   return NS_ERROR_FILE_IS_LOCKED;
 }
 
