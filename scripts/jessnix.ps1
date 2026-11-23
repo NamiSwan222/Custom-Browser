@@ -41,6 +41,14 @@ $engineReal = if ($engineLink -and $engineLink.LinkType) { @($engineLink.Target)
 if ($engineReal -match '\s') {
     throw "Firefox cannot build in a path with spaces: $engineReal. Move the repo, or make engine\ a junction to a folder without spaces."
 }
+# rustup picks the Rust version from rust-toolchain.toml in the folder a command
+# runs in, or one above it. Behind a junction engine\ is no longer under the
+# repo, and a newer Rust than the pinned one fails to link with Firefox's clang
+# in a release build, so name the version outright.
+$rustPin = Join-Path $Repo 'rust-toolchain.toml'
+if ((Test-Path $rustPin) -and ((Get-Content $rustPin -Raw) -match 'channel\s*=\s*"([^"]+)"')) {
+    $env:RUSTUP_TOOLCHAIN = $Matches[1]
+}
 
 # surfer (Zen's build tool) runs scripts through bash. It looks for bash next to
 # git.exe, which fails when PATH holds more than one git.exe; Git's own bin folder
