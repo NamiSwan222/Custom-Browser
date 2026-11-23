@@ -21,6 +21,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
 // shortcuts and notes, arranged by the person, no network requests.
 const PREF_NEWTAB = "custom.newtab.enabled";
 const NEWTAB_URL = "chrome://browser/content/custom-newtab.html";
+// The page's address up to 0.2.x, still in sessions saved then.
+const OLD_NEWTAB_URL = "chrome://browser/content/jessnix-newtab.html";
 
 // { "<space uuid>": { background: "<path>", font: "<family>" } }
 const PREF_SPACE_LOOKS = "custom.spaces.looks";
@@ -46,6 +48,7 @@ function writeSpaceLooks(looks) {
 class nsCustomSiteTools {
   init() {
     this.#setupNewTab();
+    this.#followOldNewTab();
     Services.prefs.addObserver(PREF_NEWTAB, () => this.#setupNewTab());
     this.#addPageMenu();
     this.#addSpaceMenu();
@@ -69,6 +72,22 @@ class nsCustomSiteTools {
 
   observe() {
     this.applySpaceLook();
+  }
+
+  // A restored tab that was on the new tab page's old address goes to the
+  // current one.
+  #followOldNewTab() {
+    gBrowser.addTabsProgressListener({
+      onLocationChange(browser, progress, request, uri) {
+        if (progress.isTopLevel && uri?.spec === OLD_NEWTAB_URL) {
+          const on = Services.prefs.getBoolPref(PREF_NEWTAB, true);
+          browser.loadURI(Services.io.newURI(on ? NEWTAB_URL : "about:newtab"), {
+            triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+            loadFlags: Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY,
+          });
+        }
+      },
+    });
   }
 
   // The new tab page is one setting for the whole browser; any window sets it.

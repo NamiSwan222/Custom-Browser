@@ -13,6 +13,7 @@
         content/browser/zen-components/CustomTogetherNet.mjs                   (../../zen/custom/CustomTogetherNet.mjs)
         content/browser/zen-components/CustomTogetherChild.sys.mjs             (../../zen/custom/CustomTogetherChild.sys.mjs)
         content/browser/zen-components/CustomTogetherParent.sys.mjs            (../../zen/custom/CustomTogetherParent.sys.mjs)
+        content/browser/zen-components/CustomMigration.sys.mjs               (../../zen/custom/CustomMigration.sys.mjs)
         content/browser/zen-components/CustomLooks.sys.mjs                    (../../zen/custom/CustomLooks.sys.mjs)
         content/browser/zen-components/CustomLookExtras.mjs                  (../../zen/custom/CustomLookExtras.mjs)
         content/browser/zen-components/CustomSiteTools.mjs                   (../../zen/custom/CustomSiteTools.mjs)

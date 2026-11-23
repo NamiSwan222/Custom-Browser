@@ -1,8 +1,31 @@
 diff --git a/toolkit/xre/nsXREDirProvider.cpp b/toolkit/xre/nsXREDirProvider.cpp
-index dcce3335e14f9f5d3c0b9fe6a86527be6011c143..ca788d6bd1db3a14d80bf571813e9c706456968f 100644
+index f6437f0a8b0bdccfa15a9f3c23ca6389d5c9deaa..7a6c74d8f1c5aa497b2c5ee211edac6cd416d378 100644
 --- a/toolkit/xre/nsXREDirProvider.cpp
 +++ b/toolkit/xre/nsXREDirProvider.cpp
-@@ -1335,14 +1335,10 @@ nsresult nsXREDirProvider::AppendFromAppData(nsIFile* aFile, bool aIsDotted) {
+@@ -72,6 +72,7 @@
+ #  include <windows.h>
+ #  include <shlobj.h>
+ #  include "WinUtils.h"
++#  include "CustomProfileMove.h"
+ #endif
+ #ifdef XP_MACOSX
+ #  ifdef NIGHTLY_BUILD
+@@ -1274,6 +1275,14 @@ nsresult nsXREDirProvider::GetUserDataDirectory(nsIFile** aFile, bool aLocal) {
+     NS_ENSURE_SUCCESS(rv, rv);
+   }
+ 
++#ifdef XP_WIN
++  // Custom Browser: the data folder kept under the browser's earlier name.
++  rv = CustomBrowserMoveOldUserData(localDir,
++                                    gAppData ? gAppData->profile : nullptr,
++                                    aLocal);
++  NS_ENSURE_SUCCESS(rv, rv);
++#endif
++
+   rv = EnsureDirectoryExists(localDir);
+   NS_ENSURE_SUCCESS(rv, rv);
+ 
+@@ -1349,14 +1358,10 @@ nsresult nsXREDirProvider::AppendFromAppData(nsIFile* aFile, bool aIsDotted) {
    // Similar to nsXREDirProvider::AppendProfilePath.
    // TODO: Bug 1990407 - Evaluate if refactoring might be required there in the
    // future?
@@ -20,7 +43,7 @@ index dcce3335e14f9f5d3c0b9fe6a86527be6011c143..ca788d6bd1db3a14d80bf571813e9c70
      MOZ_TRY(aFile->AppendRelativeNativePath(profile));
    } else {
      nsAutoCString vendor;
-@@ -1352,8 +1348,6 @@ nsresult nsXREDirProvider::AppendFromAppData(nsIFile* aFile, bool aIsDotted) {
+@@ -1366,8 +1371,6 @@ nsresult nsXREDirProvider::AppendFromAppData(nsIFile* aFile, bool aIsDotted) {
      ToLowerCase(vendor);
      ToLowerCase(appName);
  
@@ -29,7 +52,7 @@ index dcce3335e14f9f5d3c0b9fe6a86527be6011c143..ca788d6bd1db3a14d80bf571813e9c70
      MOZ_TRY(aFile->AppendRelativeNativePath(appName));
    }
  
-@@ -1530,18 +1524,8 @@ nsresult nsXREDirProvider::GetLegacyOrXDGHomePath(const char* aHomeDir,
+@@ -1544,18 +1547,8 @@ nsresult nsXREDirProvider::GetLegacyOrXDGHomePath(const char* aHomeDir,
      // of a specific build where legacy needs to be forced, similar to the
      // Firefox handling. Both casing are verified to account for systems where
      // that matters.

@@ -13,6 +13,8 @@
 //
 // Used by Settings (custom-settings.js) and the command palette.
 
+import { currentPrefNames } from "chrome://browser/content/zen-components/CustomMigration.sys.mjs";
+
 // Every setting that makes up a look, by section (for "Reset this section").
 export const LOOK_SECTIONS = {
   layout: [
@@ -429,7 +431,8 @@ export const CustomLooks = {
       restored[key] = copy;
     }
     let count = 0;
-    for (const [pref, entry] of Object.entries(data.prefs || {})) {
+    // A backup from before the settings were renamed is taken too.
+    for (const [pref, entry] of Object.entries(currentPrefNames(data.prefs))) {
       const known = pref.startsWith("custom.") || PREF_TYPES.has(pref);
       if (!known || BACKUP_SKIP.some(prefix => pref.startsWith(prefix)) || !entry || !["int", "bool", "string"].includes(entry.type)) {
         continue;
@@ -464,10 +467,11 @@ export const CustomLooks = {
     return { prefs: count, looks: looks.length };
   },
 
-  // Only known look settings, with values of the right type, get in.
+  // Only known look settings, with values of the right type, get in. Looks and
+  // codes shared from before the settings were renamed are taken too.
   _onlyLookPrefs(prefs) {
     const clean = {};
-    for (const [pref, value] of Object.entries(prefs || {})) {
+    for (const [pref, value] of Object.entries(currentPrefNames(prefs))) {
       const type = PREF_TYPES.get(pref);
       if (
         (type === "int" && Number.isInteger(value)) ||
