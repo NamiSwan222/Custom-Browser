@@ -79,7 +79,7 @@ Zen already turns off Mozilla telemetry, studies and crash-report sending (`pref
 - [x] Tracking parameters stripped from links
 - [x] Fingerprinting protection (Firefox's, without the site breakage of full resistFingerprinting)
 - [x] WebRTC IP-leak protection, cross-site referrers trimmed to the origin
-- [x] Default search: DuckDuckGo, chosen once on a profile's first run (normal and private windows); picking another engine afterwards sticks (`JessnixUpdates.mjs`, pref `jessnix.search.default-set`)
+- [x] Default search: Google, chosen once per profile (a profile still on the earlier DuckDuckGo default moves over once); picking another engine afterwards sticks, in Settings > Personalize > Search (`JessnixUpdates.mjs`, pref `jessnix.search.default-version`)
 - [x] Clear on exit with a keep list: Firefox's own Settings > Privacy > "Delete cookies and site data when Custom Browser is closed" plus Manage Exceptions (allow) does exactly this; nothing extra built. Off by default, since logins stay remembered
 
 **Brave features, and where they come from in Custom Browser.** Crypto (Rewards, Wallet), the paid VPN, Leo AI and Brave News are left out on purpose.

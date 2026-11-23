@@ -34,7 +34,13 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $Repo = Split-Path -Parent $PSScriptRoot
-if ($Repo -match '\s') { throw "Firefox cannot build in a path with spaces: $Repo" }
+# Firefox cannot build in a path with spaces. Only engine\ is built, and it may
+# be a link (junction) to a folder elsewhere, so what counts is where it really is.
+$engineLink = Get-Item (Join-Path $Repo 'engine') -ErrorAction SilentlyContinue
+$engineReal = if ($engineLink -and $engineLink.LinkType) { @($engineLink.Target)[0] } else { Join-Path $Repo 'engine' }
+if ($engineReal -match '\s') {
+    throw "Firefox cannot build in a path with spaces: $engineReal. Move the repo, or make engine\ a junction to a folder without spaces."
+}
 
 # surfer (Zen's build tool) runs scripts through bash. It looks for bash next to
 # git.exe, which fails when PATH holds more than one git.exe; Git's own bin folder
