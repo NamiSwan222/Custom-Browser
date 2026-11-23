@@ -4,7 +4,7 @@ A fast, private browser for daily use, with features that are mine.
 
 Custom Browser is a **fork of [Zen Browser](https://github.com/zen-browser/desktop)**, which is built on Firefox. Zen already has vertical tabs, workspaces, split view and compact mode. Custom Browser adds its own name and look, LibreWolf-style privacy defaults, and its own features on top.
 
-Inside the code it is still called Custom Browser (`custom-browser.exe`, `scripts/custom-browser.ps1`, `src/zen/custom/`, `prefs/custom/`, `custom.*` prefs); those names are paths and identifiers, not the product name.
+Up to 0.2.x the code used the working name "jessnix" (`jessnix.exe`, `jessnix.*` prefs, `%APPDATA%\jessnix`). From 0.3.0 everything is named after the product: `custom-browser.exe`, `scripts/custom-browser.ps1`, `src/zen/custom/`, `prefs/custom/`, `custom.*` prefs, `%APPDATA%\custom-browser`. The old name only remains where an update from 0.2.x is carried over (`src/toolkit/xre/CustomProfileMove.h`, `src/zen/custom/CustomMigration.sys.mjs`, the installer patch).
 
 ---
 
@@ -26,7 +26,7 @@ How Zen is built: [surfer](https://github.com/zen-browser/surfer) downloads Fire
 | Need | Detail |
 |---|---|
 | Windows 10/11 x64 | |
-| A path with no spaces | Firefox refuses to build otherwise (the repo is `D:\AIStuff\Custom-Browser`) |
+| A path with no spaces for `engine/` | Firefox refuses to build otherwise. The repo is `D:\AIStuff\Custom Browser`, so `engine\` is a junction to `D:\AIStuff\Custom-Browser-Engine` |
 | MozillaBuild | `C:\mozilla-build`, Mozilla's build shell and tools |
 | Git for Windows, Node.js 21+, Python 3, Rust | surfer and Firefox's build use them |
 | sccache, 7-Zip | build cache, packaging |
@@ -67,7 +67,7 @@ Custom-Browser/
 - [x] Icons from `branding/` into `configs/branding/release/` (`scripts/custom_branding.py`). The source art is 256 px, so the large about-page logo is upscaled; a bigger original would sharpen it
 - [x] **Updater off** (`--disable-updater`), so Zen's server can never replace Custom Browser with Zen
 - [x] About page, post-update notice and uninstall page link to the project's GitHub; Zen's donate and privacy-policy links removed
-- [x] Own profile name `custom-browser` and vendor, so it never shares data with Zen or Firefox
+- [x] Own profile name `custom-browser` and vendor, so it never shares data with Zen or Firefox. A copy updated from 0.2.x keeps its profile: the old `jessnix` data folder is renamed on first start, and its settings, images, saved looks and shortcuts are carried over
 - [ ] ✋ Wordmark (the name drawn as an image) in the browser's own type: waits for the owner's `DESIGN.md`
 - [x] Remaining Zen services reviewed, both kept: the mods store only downloads `theme.json` of installed mods from `zen-browser.github.io` (every 20 days; nothing sent), and the store page at `zen-browser.app` can install mods only when opened. `share.zen-browser.app` is contacted only when the owner shares something. Zen's donate button in the Library footer removed
 - [x] Windows installer (`scripts/custom-browser.ps1 package`): `dist/Custom-Browser-<version>-setup.exe`, with uBlock Origin inside. Not code-signed yet (SmartScreen warns)

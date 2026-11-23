@@ -38,6 +38,9 @@ These are the places a Zen update can conflict. Everything else Custom Browser a
 | `src/zen/common/modules/ZenUpdates.mjs` | donate link removed from the post-update notice |
 | `src/zen/library/ZenLibrary.mjs` | donate button removed from the Library footer |
 | `src/browser/installer/windows/nsis/uninstaller-nsi.patch` | uninstall page points to Custom Browser's issues |
+| `src/browser/installer/windows/nsis/installer-nsi.patch` | shortcuts that point at the 0.2.x program file (`jessnix.exe`) are pointed at the current one; registry entries under the old names are removed |
+| `src/toolkit/xre/nsXREDirProvider-cpp.patch` | one call into `CustomProfileMove.h` (a file of its own), which renames the 0.2.x data folder before the profile list is read |
+| `src/zen/common/Components.manifest` | one line: `CustomMigration.sys.mjs` runs before the first window |
 | `src/browser/installer/package-manifest-in.patch` | packages `distribution/extensions/` (bundled uBlock Origin); Firefox packs it only in Mozilla's own builds |
 | `src/zen/common/styles/zen-omnibox.css` | bookmark star shown unless `custom.urlbar.show-bookmark-star` is off |
 | `prefs/zen/view.yaml`, `prefs/firefox/browser.yaml` | window buttons always shown; bookmarks bar on every page |
