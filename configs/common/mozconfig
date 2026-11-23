@@ -4,19 +4,19 @@
 
 # Browser branding
 ac_add_options --with-app-name=${binName}
-ac_add_options --with-app-basename=Jessnix
+ac_add_options --with-app-basename=CustomBrowser
 
 # Localization (Must be an absolute path)
 ac_add_options --with-l10n-base="${topsrcdir}/browser/locales"
 
-export MOZ_APP_BASENAME=Jessnix
+export MOZ_APP_BASENAME=CustomBrowser
 export MOZ_BRANDING_DIRECTORY=${brandingDir}
 export MOZ_OFFICIAL_BRANDING_DIRECTORY=${brandingDir}
 
-ac_add_options --with-distribution-id=io.github.namiswan222.jessnix
+ac_add_options --with-distribution-id=io.github.namiswan222.custom-browser
 
-# Jessnix: no updater until Jessnix has its own update feed (PLAN.md Phase 3).
-# Zen's updater would otherwise download Zen over Jessnix.
+# Custom Browser: no updater until Custom Browser has its own update feed (PLAN.md Phase 3).
+# Zen's updater would otherwise download Zen over Custom Browser.
 ac_add_options --disable-updater
 
 # Uncomment if builds are too resource hungry
@@ -24,7 +24,7 @@ ac_add_options --disable-updater
 # ac_add_options --enable-linker=gold
 
 # Misc
-export MOZ_SOURCE_REPO=https://github.com/NamiSwan222/Jessnix-Browser
+export MOZ_SOURCE_REPO=https://github.com/NamiSwan222/Custom-Browser
 export MOZ_SOURCE_CHANGESET=${changeset}
 export MOZ_INCLUDE_SOURCE_INFO=1
 
@@ -94,20 +94,20 @@ if test "$ZEN_RELEASE"; then
   ac_add_options --disable-crashreporter
 fi
 
-# Jessnix: faster local dev builds (scripts/jessnix.ps1 build, ui, cpp). Release
+# Custom Browser: faster local dev builds (scripts/custom-browser.ps1 build, ui, cpp). Release
 # builds above are unchanged.
-# - sccache: scripts/jessnix.ps1 finds it and sets JESSNIX_SCCACHE; it caches
+# - sccache: scripts/custom-browser.ps1 finds it and sets CUSTOM_SCCACHE; it caches
 #   C++ and Rust, so unchanged files are never compiled twice.
 # - no debug symbols: linking xul.dll is the slowest part of a C++ rebuild on
 #   Windows, and writing its PDB is much of that. Crash stacks show less.
 # - no tests: skips compiling thousands of test files (gtests etc.). Set
-#   JESSNIX_DEV_TESTS=1 to build them, e.g. for `npm test`.
+#   CUSTOM_DEV_TESTS=1 to build them, e.g. for `npm test`.
 if test -z "$ZEN_RELEASE"; then
-  if test -n "$JESSNIX_SCCACHE" -a "$SCCACHE_GHA_ENABLED" != "true"; then
-    ac_add_options --with-ccache="$JESSNIX_SCCACHE"
+  if test -n "$CUSTOM_SCCACHE" -a "$SCCACHE_GHA_ENABLED" != "true"; then
+    ac_add_options --with-ccache="$CUSTOM_SCCACHE"
   fi
   ac_add_options --disable-debug-symbols
-  if test -z "$JESSNIX_DEV_TESTS"; then
+  if test -z "$CUSTOM_DEV_TESTS"; then
     ac_add_options --disable-tests
   fi
 fi

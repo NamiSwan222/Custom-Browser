@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 NamiSwan222. See LICENSE-MIT.
+
+# Power features (src/zen/custom/CustomPower.mjs).
+
+# Game mode: background tabs unloaded and paused, memory freed, compact mode.
+- name: custom.game-mode
+  value: false
+
+# Notes per site (JSON: host -> text), from the command palette's "Notes for
+# this site".
+- name: custom.site-notes
+  value: "{}"
+
+# Chrome extensions: "Add to Custom Browser" on Chrome Web Store pages
+# (CustomChromeStore.mjs). Converted extensions are remembered for update
+# checks (JSON: store id -> version).
+- name: custom.chrome-extensions.enabled
+  value: true
+- name: custom.chrome-extensions.converted
+  value: "{}"
+- name: custom.chrome-extensions.last-update-check
+  value: 0

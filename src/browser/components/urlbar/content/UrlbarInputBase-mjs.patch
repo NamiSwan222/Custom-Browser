@@ -367,7 +367,7 @@ index d8a26721fd0320423484029f9709ae5cee35e13c..e2695a7ce631c1f2446f6ee810c1ecb1
 +    }
 +
 +    this.style.top = px(
-+      this.browserWindow.gZenVerticalTabsManager._hasSetSingleToolbar || this.browserWindow.document.documentElement.hasAttribute("jessnix-top-tabs")
++      this.browserWindow.gZenVerticalTabsManager._hasSetSingleToolbar || this.browserWindow.document.documentElement.hasAttribute("custom-top-tabs")
 +        ? getUntransformedTop(this.parentNode)
 +        : UrlbarContentUtils.getPlatform() == "macosx"
 +          ? -2

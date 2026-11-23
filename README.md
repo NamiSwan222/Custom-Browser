@@ -1,10 +1,10 @@
 <p align="center"><img src="branding/png/icon_128.png" width="96" alt="Custom Browser icon"></p>
 
-# Jessnix Browser
+# Custom Browser
 
 A fast, private browser for daily use, with features of its own.
 
-Jessnix is a fork of [Zen Browser](https://github.com/zen-browser/desktop), which is built on Firefox: vertical tabs, spaces and split view from Zen, LibreWolf-style privacy defaults, and Jessnix's own look and features on top.
+Custom Browser is a fork of [Zen Browser](https://github.com/zen-browser/desktop), which is built on Firefox: vertical tabs, spaces and split view from Zen, LibreWolf-style privacy defaults, and Custom Browser's own look and features on top.
 
 **Status:** early. See [PLAN.md](PLAN.md) for the roadmap.
 
@@ -31,26 +31,26 @@ Needs MozillaBuild, Git, Node.js, Python, Rust, sccache and 7-Zip (details in PL
 
 ```powershell
 npm i
-.\scripts\jessnix.ps1 init    # first time: downloads Firefox (~1 GB) and prepares it
-.\scripts\jessnix.ps1 build   # full build
-.\scripts\jessnix.ps1 start   # run it
-.\scripts\jessnix.ps1 ui      # after changing only JS/CSS/HTML: fast rebuild
-.\scripts\jessnix.ps1 release # optimized build for sharing (~30 min on 32 threads)
-.\scripts\jessnix.ps1 package # installer: dist\Custom-Browser-<version>-setup.exe
-.\scripts\jessnix.ps1 cpp     # after changing C++/Rust: quick rebuild
+.\scripts\custom-browser.ps1 init    # first time: downloads Firefox (~1 GB) and prepares it
+.\scripts\custom-browser.ps1 build   # full build
+.\scripts\custom-browser.ps1 start   # run it
+.\scripts\custom-browser.ps1 ui      # after changing only JS/CSS/HTML: fast rebuild
+.\scripts\custom-browser.ps1 release # optimized build for sharing (~30 min on 32 threads)
+.\scripts\custom-browser.ps1 package # installer: dist\Custom-Browser-<version>-setup.exe
+.\scripts\custom-browser.ps1 cpp     # after changing C++/Rust: quick rebuild
 ```
 
-Signing: set `JESSNIX_SIGN_CERT` (a .pfx code-signing certificate) and `JESSNIX_SIGN_PASSWORD` before `package`. Releases can also be built by `.github/workflows/release.yml` on a self-hosted Windows runner.
+Signing: set `CUSTOM_SIGN_CERT` (a .pfx code-signing certificate) and `CUSTOM_SIGN_PASSWORD` before `package`. Releases can also be built by `.github/workflows/release.yml` on a self-hosted Windows runner.
 
 ## Building on Linux
 
-`./scripts/jessnix.sh` takes the same steps (`init`, `build`, `ui`, `cpp`, `release`, `package`, `start`). Not yet tested on a Linux machine.
+`./scripts/custom-browser.sh` takes the same steps (`init`, `build`, `ui`, `cpp`, `release`, `package`, `start`). Not yet tested on a Linux machine.
 
 ## License
 
 Two licences, by file:
 
-- **MIT** ([LICENSE-MIT](LICENSE-MIT)): Jessnix's own files, each marked `SPDX-License-Identifier: MIT` at the top: `src/zen/jessnix/`, `prefs/jessnix/`, the Personalize settings page and its text, and the `scripts/jessnix*` / `fetch_ublock.py` / `jessnix_branding.py` scripts.
-- **MPL-2.0** ([LICENSE](LICENSE)): everything that comes from Zen and Firefox, including Jessnix's edits inside those files. The MPL requires that these files stay under the MPL. Zen's code is by the Zen OSS Team.
+- **MIT** ([LICENSE-MIT](LICENSE-MIT)): Custom Browser's own files, each marked `SPDX-License-Identifier: MIT` at the top: `src/zen/custom/`, `prefs/custom/`, the Personalize settings page and its text, and the `scripts/custom*` / `fetch_ublock.py` / `custom_branding.py` scripts.
+- **MPL-2.0** ([LICENSE](LICENSE)): everything that comes from Zen and Firefox, including Custom Browser's edits inside those files. The MPL requires that these files stay under the MPL. Zen's code is by the Zen OSS Team.
 
 uBlock Origin is downloaded at build time and is GPL-3.0; it is not stored in this repository.

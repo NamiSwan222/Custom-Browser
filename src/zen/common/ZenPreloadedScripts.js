@@ -28,14 +28,14 @@
     "chrome://browser/content/zen-components/ZenEmojiPicker.mjs",
     "chrome://browser/content/zen-components/ZenDownloadAnimation.mjs",
     "resource:///modules/zen/share/ZenShareManager.mjs",
-    "chrome://browser/content/zen-components/JessnixPersonalize.mjs",
-    "chrome://browser/content/zen-components/JessnixTopTabs.mjs",
-    "chrome://browser/content/zen-components/JessnixTogether.mjs",
-    "chrome://browser/content/zen-components/JessnixLookExtras.mjs",
-    "chrome://browser/content/zen-components/JessnixSiteTools.mjs",
-    "chrome://browser/content/zen-components/JessnixPower.mjs",
-    "chrome://browser/content/zen-components/JessnixChromeStore.mjs",
-    "chrome://browser/content/zen-components/JessnixUpdates.mjs",
+    "chrome://browser/content/zen-components/CustomPersonalize.mjs",
+    "chrome://browser/content/zen-components/CustomTopTabs.mjs",
+    "chrome://browser/content/zen-components/CustomTogether.mjs",
+    "chrome://browser/content/zen-components/CustomLookExtras.mjs",
+    "chrome://browser/content/zen-components/CustomSiteTools.mjs",
+    "chrome://browser/content/zen-components/CustomPower.mjs",
+    "chrome://browser/content/zen-components/CustomChromeStore.mjs",
+    "chrome://browser/content/zen-components/CustomUpdates.mjs",
   ];
 
   for (let script of scripts) {

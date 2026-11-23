@@ -1,0 +1,201 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 NamiSwan222. See LICENSE-MIT. */
+
+/* Custom Browser: Settings > Look and Feel > Personalize > Layout.
+ * Every choice is a pref, so each person sets their own and the change shows
+ * at once in every window. Size 0 and roundness 1 leave Zen's look untouched. */
+
+/* Size. Zen's sidebar is dense (14px text, 28px buttons); Custom Browser starts at
+ * Comfortable so tabs and buttons are easier to read and to hit. */
+@media -moz-pref("custom.look.size", 1) {
+  #navigator-toolbox {
+    --tab-min-height: 40px;
+    --custom-button-padding: 8px;
+  }
+  #navigator-toolbox #tabbrowser-tabs {
+    font-size: 15px;
+  }
+}
+
+@media -moz-pref("custom.look.size", 2) {
+  #navigator-toolbox {
+    --tab-min-height: 46px;
+    --custom-button-padding: 10px;
+  }
+  #navigator-toolbox #tabbrowser-tabs {
+    font-size: 16.5px;
+  }
+  #urlbar {
+    font-size: 16px;
+  }
+}
+
+/* Zen draws its sidebar buttons at a fixed 6px around a 16px icon; the bigger
+ * sizes widen that, so the buttons are easier to hit. */
+@media not -moz-pref("custom.look.size", 0) {
+  #navigator-toolbox :is(#zen-sidebar-top-buttons, #zen-sidebar-foot-buttons) .toolbarbutton-1 > .toolbarbutton-icon {
+    padding: var(--custom-button-padding) !important;
+    width: calc(16px + 2 * var(--custom-button-padding)) !important;
+    height: calc(16px + 2 * var(--custom-button-padding)) !important;
+  }
+}
+
+/* Roundness: 0 squarer, 1 Zen's own, 2 rounder. Zen sets these radii on the
+ * sidebar and on each button, so they are overridden there. */
+@media -moz-pref("custom.look.roundness", 0) {
+  :root {
+    --zen-border-radius: 4px;
+  }
+  :root #navigator-toolbox,
+  :root #navigator-toolbox .toolbarbutton-1 {
+    --border-radius-medium: 6px;
+    --tab-border-radius: 4px;
+  }
+}
+
+@media -moz-pref("custom.look.roundness", 2) {
+  :root {
+    --zen-border-radius: 14px;
+  }
+  :root #navigator-toolbox,
+  :root #navigator-toolbox .toolbarbutton-1 {
+    --border-radius-medium: 22px;
+    --tab-border-radius: 14px;
+  }
+}
+
+/* Button labels: the sidebar's bottom buttons show their names beside the icon,
+ * so their job is readable without hovering. */
+@media -moz-pref("custom.look.button-labels") {
+  #zen-sidebar-foot-buttons > :is(#zen-library-button, #zen-create-new-button) {
+    width: auto !important;
+    & > .toolbarbutton-text {
+      display: flex !important;
+      align-items: center;
+      padding: 0 6px 0 2px !important;
+    }
+  }
+  /* Zen's main menu button is three dots, which reads as "more" rather than
+   * as the menu; with names on, it gets the familiar three-line menu icon. */
+  #PanelUI-menu-button {
+    list-style-image: url("chrome://browser/skin/menu.svg") !important;
+  }
+  /* Zen draws the Library icon as a 20px sprite centred over the whole button;
+   * keep it centred over the icon's own spot, so the label sits beside it. */
+  #zen-library-button .zen-library-sprite {
+    inset-inline-start: calc(var(--custom-button-padding, 6px) - 2px) !important;
+  }
+}
+
+/* Text (Personalize > Text): the browser's own font and size, separate from
+ * page zoom. Set by CustomLookExtras.mjs as variables on the root. */
+:root[custom-ui-font] :is(#navigator-toolbox, #zen-appcontent-navbar-wrapper, #urlbar, menupopup, panel, #custom-together-toast) {
+  font-family: var(--custom-ui-font), system-ui !important;
+}
+
+:root[custom-ui-font-size] :is(#navigator-toolbox, #zen-appcontent-navbar-wrapper, #urlbar, menupopup, panel) {
+  font-size: var(--custom-ui-font-size) !important;
+}
+
+:root[custom-ui-font-size] .tab-label {
+  font-size: var(--custom-ui-font-size) !important;
+}
+
+/* See-through window: Zen's background fades, so Windows 11's Mica blur shows
+ * behind the toolbars (widget.windows.mica is on in prefs/zen/windows.yaml).
+ * Pages are never see-through. */
+:root[custom-see-through] {
+  background-color: transparent !important;
+
+  & #zen-browser-background {
+    opacity: var(--custom-see-through-opacity) !important;
+  }
+}
+
+/* Address bar at the bottom: Zen's address row moves under the page, and the
+ * open address bar grows upwards (CustomLookExtras.mjs measures where). */
+:root[custom-address-bottom] {
+  & #zen-appcontent-navbar-wrapper {
+    order: 2 !important;
+  }
+
+  & #zen-tabbox-wrapper {
+    order: 1 !important;
+  }
+
+  & #urlbar[breakout-extend]:not([zen-floating-urlbar]) {
+    top: auto !important;
+    bottom: var(--custom-urlbar-bottom, 0px) !important;
+    display: flex !important;
+    flex-direction: column-reverse !important;
+  }
+}
+
+/* Tab style (Personalize > Tab style), for tabs on top and in the sidebar.
+ * Height: 0 default, 1 small, 2 medium, 3 large. */
+@media -moz-pref("custom.tabs.style.height", 1) {
+  :root {
+    --tab-min-height: 30px !important;
+    --custom-tab-height: 28px !important;
+  }
+}
+
+@media -moz-pref("custom.tabs.style.height", 2) {
+  :root {
+    --tab-min-height: 38px !important;
+    --custom-tab-height: 34px !important;
+  }
+}
+
+@media -moz-pref("custom.tabs.style.height", 3) {
+  :root {
+    --tab-min-height: 46px !important;
+    --custom-tab-height: 40px !important;
+  }
+}
+
+/* Shape: 0 default, 1 square, 2 pill. */
+/* Zen draws the tab background's corners from these variables (with a more
+ * specific rule), so the variables are what change. */
+@media -moz-pref("custom.tabs.style.shape", 1) {
+  .tabbrowser-tab {
+    --border-radius-medium: 0px !important;
+    --tab-border-radius: 0px !important;
+  }
+}
+
+@media -moz-pref("custom.tabs.style.shape", 2) {
+  .tabbrowser-tab {
+    --border-radius-medium: 999px !important;
+    --tab-border-radius: 999px !important;
+  }
+}
+
+/* Favicon-only tabs: just the site's icon. */
+@media -moz-pref("custom.tabs.style.favicon-only") {
+  .tabbrowser-tab:not([pinned]) .tab-label-container {
+    display: none !important;
+  }
+
+  :root[custom-top-tabs] .tabbrowser-tab[fadein]:not([pinned], [zen-essential]) {
+    flex: 0 0 auto !important;
+    width: calc(var(--custom-tab-height, 38px) + 12px) !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+}
+
+/* Close button: 0 on hover (default), 1 always, 2 never. */
+@media -moz-pref("custom.tabs.style.close", 1) {
+  .tabbrowser-tab:not([pinned]) .tab-close-button {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+}
+
+@media -moz-pref("custom.tabs.style.close", 2) {
+  .tabbrowser-tab .tab-close-button {
+    display: none !important;
+  }
+}

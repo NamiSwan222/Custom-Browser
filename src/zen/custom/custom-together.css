@@ -1,0 +1,402 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 NamiSwan222. See LICENSE-MIT. */
+
+/* Browse Together (CustomTogether.mjs): the toolbar button, its panel,
+ * other people's pointers and pings over the page, the live tab view and the
+ * small message near the button. */
+
+#custom-together-button {
+  list-style-image: url("chrome://browser/skin/synced-tabs.svg");
+
+  &[custom-together-active] .toolbarbutton-icon {
+    fill: var(--zen-primary-color, AccentColor);
+    background-color: color-mix(in srgb, var(--zen-primary-color, AccentColor) 18%, transparent);
+    border-radius: var(--border-radius-small, 4px);
+  }
+}
+
+#custom-together-panel {
+  --panel-width: 340px;
+}
+
+.custom-together-body {
+  width: 340px;
+  max-height: 600px;
+  overflow-y: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font: menu;
+  color: var(--arrowpanel-color, CanvasText);
+
+  & h2,
+  & h3,
+  & p {
+    margin: 0;
+  }
+
+  & h3 {
+    margin-top: 6px;
+    font-size: 0.9em;
+    opacity: 0.75;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  & input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+    background: color-mix(in srgb, currentColor 6%, transparent);
+    color: inherit;
+  }
+
+  & button {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+    background: color-mix(in srgb, currentColor 8%, transparent);
+    color: inherit;
+    cursor: default;
+
+    &:hover:not([disabled]) {
+      background: color-mix(in srgb, currentColor 15%, transparent);
+    }
+
+    &[disabled] {
+      opacity: 0.5;
+    }
+  }
+}
+
+.custom-together-title {
+  font-size: 1.15em;
+}
+
+/* The accent colour lightened, with dark text: readable whether the accent
+ * itself is light or dark. */
+.custom-together-primary {
+  background: color-mix(in srgb, var(--zen-primary-color, AccentColor), white 45%) !important;
+  color: #111 !important;
+  border-color: transparent !important;
+  font-weight: 600;
+
+  &:hover {
+    background: color-mix(in srgb, var(--zen-primary-color, AccentColor), white 60%) !important;
+  }
+}
+
+.custom-together-danger {
+  margin-top: 6px;
+  color: #ff6b6b !important;
+}
+
+.custom-together-muted {
+  opacity: 0.65;
+  font-size: 0.9em;
+}
+
+.custom-together-status {
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, #fcc419 18%, transparent);
+}
+
+.custom-together-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.custom-together-label {
+  min-width: 3.5em;
+}
+
+.custom-together-code {
+  flex: 0 0 4.5em !important;
+  text-transform: uppercase;
+  text-align: center;
+  letter-spacing: 0.1em;
+}
+
+.custom-together-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.custom-together-toggle {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.custom-together-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.custom-together-room {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, currentColor 6%, transparent);
+
+  & > :first-child {
+    flex: 1;
+    font-weight: 600;
+  }
+}
+
+.custom-together-pending .custom-together-room {
+  background: color-mix(in srgb, var(--zen-primary-color, AccentColor) 18%, transparent);
+}
+
+.custom-together-person {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.custom-together-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.custom-together-roominfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px;
+  border-radius: 8px;
+  background: color-mix(in srgb, currentColor 6%, transparent);
+  text-align: center;
+}
+
+.custom-together-bigcode {
+  font-size: 2em;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  user-select: text;
+}
+
+.custom-together-chat-log {
+  height: 140px;
+  overflow-y: auto;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, currentColor 5%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  user-select: text;
+  overflow-wrap: anywhere;
+}
+
+.custom-together-chat-system {
+  opacity: 0.6;
+  font-style: italic;
+  font-size: 0.9em;
+}
+
+/* Pointers and pings, drawn over the page by the browser window. */
+#custom-together-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2147483000;
+}
+
+.custom-together-cursor,
+.custom-together-ping {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  transition: transform 60ms linear;
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.custom-together-cursor-arrow {
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 0 16px 11px;
+  border-color: transparent transparent transparent var(--custom-peer-color);
+  transform: skewY(-15deg);
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.5));
+}
+
+.custom-together-cursor-name {
+  margin: 2px 0 0 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: var(--custom-peer-color);
+  color: #111;
+  font: menu;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  width: max-content;
+}
+
+.custom-together-ping {
+  transition: none;
+}
+
+.custom-together-ping-ring {
+  position: absolute;
+  left: -20px;
+  top: -20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 3px solid var(--custom-peer-color);
+  animation: custom-together-ping 1.8s ease-out forwards;
+}
+
+@keyframes custom-together-ping {
+  0% {
+    transform: scale(0.3);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+/* Someone's tab, shown live: a small window at the bottom right, resizable. */
+#custom-together-view {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  width: 480px;
+  min-width: 220px;
+  max-width: 90vw;
+  resize: both;
+  overflow: hidden;
+  z-index: 2147482000;
+  border-radius: 10px;
+  background: #111;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+}
+
+.custom-together-view-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  color: #eee;
+  font: menu;
+  font-size: 12px;
+}
+
+.custom-together-view-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-together-view-close {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 14px;
+}
+
+.custom-together-view-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+/* A short message (someone wants to join, a new chat message). */
+#custom-together-toast {
+  position: fixed;
+  top: 92px;
+  right: 16px;
+  max-width: 320px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, #111 92%, var(--zen-primary-color, #4dabf7));
+  color: #eee;
+  font: menu;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  z-index: 2147483001;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.2s, transform 0.2s;
+
+  &[shown] {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Shared tabs carry a small dot, so the host sees what the room sees. */
+.tabbrowser-tab:is([custom-together-shared], [custom-together-mirror]) .tab-icon-stack::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--zen-primary-color, #4dabf7);
+  box-shadow: 0 0 0 1.5px var(--toolbar-bgcolor, #222);
+}
+
+/* Together 2.0: small buttons in rows, the shared board. */
+.custom-together-small {
+  padding: 2px 8px !important;
+  font-size: 0.85em;
+  margin-inline-start: auto;
+}
+
+.custom-together-board-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, currentColor 5%, transparent);
+
+  & > :nth-child(2) {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.custom-together-done {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+/* Lightened accent, readable on a dark or light panel. */
+.custom-together-link {
+  color: color-mix(in srgb, var(--zen-primary-color, LinkText), white 45%);
+  text-decoration: underline;
+  cursor: pointer;
+}

@@ -19,7 +19,7 @@ index 04bd23515eb4505cee3d9752db6388c4961ec315..bf90f34effbd264940702954b0796cd7
  @RESPATH@/distribution/*
  #endif
 +
-+; Jessnix: bundled add-ons (uBlock Origin), installed into each new profile.
++; Custom Browser: bundled add-ons (uBlock Origin), installed into each new profile.
 +#if !defined(BUILT_BY_MOZILLA)
 +@RESPATH@/distribution/extensions/*
 +#endif

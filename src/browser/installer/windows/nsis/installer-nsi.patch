@@ -1,8 +1,95 @@
 diff --git a/browser/installer/windows/nsis/installer.nsi b/browser/installer/windows/nsis/installer.nsi
-index 785e5ccfba55a98390652a61be9dbdef1e4815eb..cba2c3bb3b2e5bcbe8ba58a40bc9bc145df81fdd 100755
+index bdae08d33338d9ac65e626b3c5d393e205348fba..e3fba2475709097809fe6934c32c55059f860367 100644
 --- a/browser/installer/windows/nsis/installer.nsi
 +++ b/browser/installer/windows/nsis/installer.nsi
-@@ -845,7 +845,7 @@ Section "-InstallEndCleanup"
+@@ -244,6 +244,50 @@ ChangeUI IDD_VERIFY "${NSISDIR}\Contrib\UIs\default.exe"
+ # Install Sections
+ 
+ ; Cleanup operations to perform at the start of the installation.
++; Custom Browser: up to 0.2.x the program file was jessnix.exe. Shortcuts that
++; still point at it keep their name and icon (they may have been chosen in
++; Personalize) and are pointed at the current program file.
++; This installer is a 32-bit program, and Windows shows a 32-bit program
++; "Program Files (x86)" in a shortcut that points into "Program Files", so the
++; target is compared in both forms. Uses $0 to $5.
++!macro CustomRetargetShortcutsIn DIR
++  StrCpy $3 "$INSTDIR"
++  StrLen $4 "$PROGRAMFILES64\"
++  StrCpy $5 "$INSTDIR\" $4
++  ${If} $5 == "$PROGRAMFILES64\"
++    StrCpy $5 "$INSTDIR" "" $4
++    StrCpy $3 "$PROGRAMFILES32\$5"
++  ${EndIf}
++  ClearErrors
++  FindFirst $0 $1 "${DIR}\*.lnk"
++  ${DoUntil} ${Errors}
++    ShellLink::GetShortCutTarget "${DIR}\$1"
++    Pop $2
++    ${If} $2 == "$INSTDIR\jessnix.exe"
++    ${OrIf} $2 == "$3\jessnix.exe"
++      ShellLink::SetShortCutTarget "${DIR}\$1" "$INSTDIR\${FileMainEXE}"
++      ${LogMsg} "Pointed shortcut at ${FileMainEXE}: ${DIR}\$1"
++      ; Its icon is either the old program file, or one chosen in Personalize:
++      ; a file in the data folder, which is renamed at the next start
++      ; (toolkit/xre/CustomProfileMove.h, zen/custom/CustomMigration.sys.mjs).
++      ShellLink::GetShortCutIconLocation "${DIR}\$1"
++      Pop $4
++      ${WordReplace} "$4" "\jessnix\Profiles\" "\custom-browser\Profiles\" "+" $5
++      ${WordReplace} "$5" "\jessnix\icon-" "\custom-browser\icon-" "+" $5
++      ${If} $4 == "$INSTDIR\jessnix.exe"
++      ${OrIf} $4 == "$3\jessnix.exe"
++        StrCpy $5 "$INSTDIR\${FileMainEXE}"
++      ${EndIf}
++      ${If} $5 != $4
++        ShellLink::SetShortCutIconLocation "${DIR}\$1" "$5"
++      ${EndIf}
++    ${EndIf}
++    ClearErrors
++    FindNext $0 $1
++  ${Loop}
++  FindClose $0
++!macroend
++
+ Section "-InstallStartCleanup"
+   System::Call "kernel32::GetTickCount()l .s"
+   Pop $InstallPhaseStart
+@@ -644,6 +688,35 @@ Section "-Application" APP_IDX
+     ${AddPrivateBrowsingShortcut}
+   ${EndIf}
+ 
++  ; Custom Browser: shortcuts left from the earlier program file name, in this
++  ; person's folders (taskbar pins included) and the all-users ones.
++  Push $0
++  Push $1
++  Push $2
++  Push $3
++  Push $4
++  Push $5
++  SetShellVarContext current
++  !insertmacro CustomRetargetShortcutsIn "$DESKTOP"
++  !insertmacro CustomRetargetShortcutsIn "$SMPROGRAMS"
++  !insertmacro CustomRetargetShortcutsIn "$APPDATA\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar"
++  SetShellVarContext all
++  !insertmacro CustomRetargetShortcutsIn "$DESKTOP"
++  !insertmacro CustomRetargetShortcutsIn "$SMPROGRAMS"
++  Pop $5
++  Pop $4
++  Pop $3
++  Pop $2
++  Pop $1
++  Pop $0
++
++  ; Custom Browser: what Windows kept under the earlier names (where the old
++  ; program file was, and the browser's own notes about each install).
++  DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\App Paths\jessnix.exe"
++  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\jessnix.exe"
++  DeleteRegKey HKCU "Software\Mozilla\Jessnix"
++  DeleteRegKey HKLM "Software\Mozilla\Jessnix"
++
+   ; Update lastwritetime of the Start Menu shortcut to clear the tile cache.
+   ; Do this for both shell contexts in case the user has shortcuts in multiple
+   ; locations, then restore the previous context at the end.
+@@ -859,7 +932,7 @@ Section "-InstallEndCleanup"
    ; When we're using the GUI, .onGUIEnd sends the ping, but of course that isn't
    ; invoked when we're running silently.
    ${If} ${Silent}
@@ -11,7 +98,7 @@ index 785e5ccfba55a98390652a61be9dbdef1e4815eb..cba2c3bb3b2e5bcbe8ba58a40bc9bc14
    ${EndIf}
  SectionEnd
  
-@@ -1800,5 +1800,5 @@ FunctionEnd
+@@ -1813,5 +1886,5 @@ FunctionEnd
  
  Function .onGUIEnd
    ${OnEndCommon}

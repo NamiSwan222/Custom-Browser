@@ -7,7 +7,7 @@
 # Setup (once): GitHub > Settings > Actions > Runners > New self-hosted runner
 # (Windows, x64), installed in a path without spaces, with the build tools from
 # PLAN.md section 2. Optional code signing: repository secrets
-# JESSNIX_SIGN_CERT_BASE64 (the .pfx, base64) and JESSNIX_SIGN_PASSWORD.
+# CUSTOM_SIGN_CERT_BASE64 (the .pfx, base64) and CUSTOM_SIGN_PASSWORD.
 #
 # Run: Actions > Release > Run workflow, or push a tag like v0.2.0.
 
@@ -37,25 +37,25 @@ jobs:
 
       - name: Download Firefox (first run only)
         shell: pwsh
-        run: if (-not (Test-Path engine)) { .\scripts\jessnix.ps1 init } else { .\scripts\jessnix.ps1 import }
+        run: if (-not (Test-Path engine)) { .\scripts\custom-browser.ps1 init } else { .\scripts\custom-browser.ps1 import }
 
       - name: Optimized build
         shell: pwsh
-        run: .\scripts\jessnix.ps1 release
+        run: .\scripts\custom-browser.ps1 release
 
       - name: Installer
         shell: pwsh
         env:
-          SIGN_CERT_BASE64: ${{ secrets.JESSNIX_SIGN_CERT_BASE64 }}
-          JESSNIX_SIGN_PASSWORD: ${{ secrets.JESSNIX_SIGN_PASSWORD }}
+          SIGN_CERT_BASE64: ${{ secrets.CUSTOM_SIGN_CERT_BASE64 }}
+          CUSTOM_SIGN_PASSWORD: ${{ secrets.CUSTOM_SIGN_PASSWORD }}
         run: |
           if ($env:SIGN_CERT_BASE64) {
             $cert = Join-Path $env:RUNNER_TEMP 'sign.pfx'
             [IO.File]::WriteAllBytes($cert, [Convert]::FromBase64String($env:SIGN_CERT_BASE64))
-            $env:JESSNIX_SIGN_CERT = $cert
+            $env:CUSTOM_SIGN_CERT = $cert
           }
-          .\scripts\jessnix.ps1 package
-          if ($env:JESSNIX_SIGN_CERT) { Remove-Item $env:JESSNIX_SIGN_CERT -Force }
+          .\scripts\custom-browser.ps1 package
+          if ($env:CUSTOM_SIGN_CERT) { Remove-Item $env:CUSTOM_SIGN_CERT -Force }
 
       - name: GitHub release
         shell: pwsh

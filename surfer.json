@@ -1,8 +1,8 @@
 {
-  "name": "Jessnix",
-  "vendor": "Jessnix",
-  "appId": "jessnix",
-  "binaryName": "jessnix",
+  "name": "Custom Browser",
+  "vendor": "Custom Browser",
+  "appId": "custom-browser",
+  "binaryName": "custom-browser",
   "version": {
     "product": "firefox",
     "version": "160.0",
@@ -20,7 +20,7 @@
       "brandShortName": "Custom Browser",
       "brandFullName": "Custom Browser",
       "release": {
-        "displayVersion": "0.2.1",
+        "displayVersion": "0.3.0",
         "github": {
           "repo": "NamiSwan222/Custom-Browser"
         }

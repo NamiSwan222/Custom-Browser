@@ -76,30 +76,30 @@ let JSWINDOWACTORS = {
   },
 };
 
-// Jessnix: Browse Together's page side (src/zen/jessnix/JessnixTogether*.mjs).
+// Custom Browser: Browse Together's page side (src/zen/custom/CustomTogether*.mjs).
 // Registered here, at startup. The browser window starts it in each page while
-// a Together session is on (jessnix.together.active), and the page side adds
+// a Together session is on (custom.together.active), and the page side adds
 // its own listeners then; what pages report is treated as untrusted.
-JSWINDOWACTORS.JessnixTogether = {
+JSWINDOWACTORS.CustomTogether = {
   parent: {
-    esModuleURI: "chrome://browser/content/zen-components/JessnixTogetherParent.sys.mjs",
+    esModuleURI: "chrome://browser/content/zen-components/CustomTogetherParent.sys.mjs",
   },
   child: {
-    esModuleURI: "chrome://browser/content/zen-components/JessnixTogetherChild.sys.mjs",
+    esModuleURI: "chrome://browser/content/zen-components/CustomTogetherChild.sys.mjs",
   },
   messageManagerGroups: ["browsers"],
   safeForUntrustedWebProcess: true,
-  enablePreference: "jessnix.together.active",
+  enablePreference: "custom.together.active",
 };
 
-// Jessnix: Chrome Web Store pages (src/zen/jessnix/JessnixChromeStore*.mjs):
+// Custom Browser: Chrome Web Store pages (src/zen/custom/CustomChromeStore*.mjs):
 // the store's "Add to Chrome" button becomes "Add to Custom Browser".
-JSWINDOWACTORS.JessnixChromeStore = {
+JSWINDOWACTORS.CustomChromeStore = {
   parent: {
-    esModuleURI: "chrome://browser/content/zen-components/JessnixChromeStoreParent.sys.mjs",
+    esModuleURI: "chrome://browser/content/zen-components/CustomChromeStoreParent.sys.mjs",
   },
   child: {
-    esModuleURI: "chrome://browser/content/zen-components/JessnixChromeStoreChild.sys.mjs",
+    esModuleURI: "chrome://browser/content/zen-components/CustomChromeStoreChild.sys.mjs",
     events: {
       DOMContentLoaded: {},
     },
@@ -107,7 +107,7 @@ JSWINDOWACTORS.JessnixChromeStore = {
   matches: ["https://chromewebstore.google.com/*", "https://chrome.google.com/webstore/*"],
   messageManagerGroups: ["browsers"],
   safeForUntrustedWebProcess: true,
-  enablePreference: "jessnix.chrome-extensions.enabled",
+  enablePreference: "custom.chrome-extensions.enabled",
 };
 
 if (!Services.appinfo.inSafeMode) {

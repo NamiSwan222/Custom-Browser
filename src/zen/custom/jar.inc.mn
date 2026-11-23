@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 NamiSwan222. See LICENSE-MIT.
+
+# Custom Browser's own features. Included from browser/base/content/zen-assets.jar.inc.mn.
+
+        content/browser/zen-components/CustomPersonalize.mjs                   (../../zen/custom/CustomPersonalize.mjs)
+        content/browser/zen-components/CustomAppIdentity.mjs                  (../../zen/custom/CustomAppIdentity.mjs)
+        content/browser/zen-styles/custom-personalize.css                      (../../zen/custom/custom-personalize.css)
+        content/browser/zen-styles/custom-look.css                              (../../zen/custom/custom-look.css)
+        content/browser/zen-components/CustomTopTabs.mjs                       (../../zen/custom/CustomTopTabs.mjs)
+        content/browser/zen-styles/custom-top-tabs.css                         (../../zen/custom/custom-top-tabs.css)
+        content/browser/zen-components/CustomTogether.mjs                      (../../zen/custom/CustomTogether.mjs)
+        content/browser/zen-components/CustomTogetherNet.mjs                   (../../zen/custom/CustomTogetherNet.mjs)
+        content/browser/zen-components/CustomTogetherChild.sys.mjs             (../../zen/custom/CustomTogetherChild.sys.mjs)
+        content/browser/zen-components/CustomTogetherParent.sys.mjs            (../../zen/custom/CustomTogetherParent.sys.mjs)
+        content/browser/zen-components/CustomMigration.sys.mjs               (../../zen/custom/CustomMigration.sys.mjs)
+        content/browser/zen-components/CustomLooks.sys.mjs                    (../../zen/custom/CustomLooks.sys.mjs)
+        content/browser/zen-components/CustomLookExtras.mjs                  (../../zen/custom/CustomLookExtras.mjs)
+        content/browser/zen-components/CustomSiteTools.mjs                   (../../zen/custom/CustomSiteTools.mjs)
+        content/browser/custom-newtab.html                                    (../../zen/custom/custom-newtab.html)
+        content/browser/zen-components/custom-newtab.js                      (../../zen/custom/custom-newtab.js)
+        content/browser/zen-styles/custom-newtab.css                         (../../zen/custom/custom-newtab.css)
+        content/browser/zen-components/CustomPower.mjs                       (../../zen/custom/CustomPower.mjs)
+        content/browser/zen-styles/custom-power.css                          (../../zen/custom/custom-power.css)
+        content/browser/zen-components/CustomChromeExtensions.sys.mjs        (../../zen/custom/CustomChromeExtensions.sys.mjs)
+        content/browser/zen-components/CustomChromeStore.mjs                 (../../zen/custom/CustomChromeStore.mjs)
+        content/browser/zen-components/CustomChromeStoreChild.sys.mjs        (../../zen/custom/CustomChromeStoreChild.sys.mjs)
+        content/browser/zen-components/CustomChromeStoreParent.sys.mjs       (../../zen/custom/CustomChromeStoreParent.sys.mjs)
+        content/browser/zen-components/CustomUpdates.mjs                     (../../zen/custom/CustomUpdates.mjs)
+        content/browser/zen-styles/custom-together.css                         (../../zen/custom/custom-together.css)
+        content/browser/preferences/custom-settings.js                         (../../zen/custom/custom-settings.js)

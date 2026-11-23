@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 NamiSwan222. See LICENSE-MIT.
+
+# Custom Browser daily-use defaults.
+
+# Stay signed in: offer to save passwords, fill them in on return, and keep
+# cookies between sessions (nothing is cleared on close).
+- name: signon.rememberSignons
+  value: true
+
+- name: signon.autofillForms
+  value: true
+
+- name: privacy.sanitize.sanitizeOnShutdown
+  value: false
+
+# Show the bookmark star in the address bar (Zen hides it; see zen-omnibox.css).
+- name: custom.urlbar.show-bookmark-star
+  value: true
+
+# Unload background tabs when Windows runs low on memory (Firefox brings a
+# tab back when it's selected).
+- name: browser.tabs.unloadOnLowMemory
+  value: true
