@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 NamiSwan222. See LICENSE-MIT.
+
+# Browse Together (src/zen/custom/CustomTogether.mjs): browsing with friends
+# on the same LAN or a virtual LAN such as Radmin VPN.
+
+# The name others see. Empty: "Friend" until set in the Together panel.
+- name: custom.together.name
+  value: ""
+
+# The TCP port a room listens on. Others type host:port if it isn't this one.
+- name: custom.together.port
+  value: 47110
+
+# On only while a session runs; the page side of Together (pointers,
+# scrolling, video) only runs then. Set by the browser, not by hand.
+- name: custom.together.active
+  value: false
+
+# Remember friends: the last room joined (JSON), saved friends (JSON list), and
+# whether a host keeps the same room code (kept in custom.together.code).
+- name: custom.together.last-room
+  value: ""
+- name: custom.together.friends
+  value: "[]"
+- name: custom.together.keep-code
+  value: false
+- name: custom.together.code
+  value: ""

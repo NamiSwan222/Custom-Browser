@@ -1,0 +1,259 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 NamiSwan222. See LICENSE-MIT.
+
+# Custom Browser: Settings > Look and Feel > Personalize. Included at the end of the
+# paneZenLooks template in zenLooksAndFeel.inc.xhtml; the logic is in
+# custom-settings.js.
+
+<hbox id="customPersonalizeCategory"
+      class="subcategory"
+      hidden="true"
+      data-category="paneZenLooks">
+<html:h1 data-l10n-id="custom-personalize-title"/>
+</hbox>
+
+<groupbox id="customPersonalizeGroup" data-category="paneZenLooks" hidden="true" class="highlighting-group">
+  <label><html:h2 data-l10n-id="custom-look-header"/></label>
+  <description class="description-deemphasized" data-l10n-id="custom-look-description"/>
+  <hbox align="center">
+    <label style="min-width: 9em;" control="customLookSize" data-l10n-id="custom-look-size"/>
+    <menulist id="customLookSize" data-custom-pref="custom.look.size" data-custom-type="int">
+      <menupopup>
+        <menuitem data-l10n-id="custom-look-size-compact" value="0"/>
+        <menuitem data-l10n-id="custom-look-size-comfortable" value="1"/>
+        <menuitem data-l10n-id="custom-look-size-large" value="2"/>
+      </menupopup>
+    </menulist>
+  </hbox>
+  <hbox align="center">
+    <label style="min-width: 9em;" control="customLookRoundness" data-l10n-id="custom-look-roundness"/>
+    <menulist id="customLookRoundness" data-custom-pref="custom.look.roundness" data-custom-type="int">
+      <menupopup>
+        <menuitem data-l10n-id="custom-look-roundness-square" value="0"/>
+        <menuitem data-l10n-id="custom-look-roundness-rounded" value="1"/>
+        <menuitem data-l10n-id="custom-look-roundness-round" value="2"/>
+      </menupopup>
+    </menulist>
+  </hbox>
+  <hbox align="center">
+    <label style="min-width: 9em;" control="customLookScheme" data-l10n-id="custom-look-scheme"/>
+    <menulist id="customLookScheme" data-custom-pref="zen.view.window.scheme" data-custom-type="int">
+      <menupopup>
+        <menuitem data-l10n-id="custom-look-scheme-auto" value="2"/>
+        <menuitem data-l10n-id="custom-look-scheme-light" value="1"/>
+        <menuitem data-l10n-id="custom-look-scheme-dark" value="0"/>
+      </menupopup>
+    </menulist>
+  </hbox>
+  <hbox align="center">
+    <label style="min-width: 9em;" control="customLookTabsTop" data-l10n-id="custom-look-tabs"/>
+    <menulist id="customLookTabsTop" data-custom-pref="custom.tabs.top" data-custom-type="bool">
+      <menupopup>
+        <menuitem data-l10n-id="custom-look-tabs-top" value="true"/>
+        <menuitem data-l10n-id="custom-look-tabs-side" value="false"/>
+      </menupopup>
+    </menulist>
+  </hbox>
+  <hbox align="center">
+    <label style="min-width: 9em;" control="customLookSide" data-l10n-id="custom-look-side"/>
+    <menulist id="customLookSide" data-custom-pref="zen.tabs.vertical.right-side" data-custom-type="bool">
+      <menupopup>
+        <menuitem data-l10n-id="custom-look-side-left" value="false"/>
+        <menuitem data-l10n-id="custom-look-side-right" value="true"/>
+      </menupopup>
+    </menulist>
+  </hbox>
+  <hbox align="center">
+    <label style="min-width: 9em;" control="customLookBookmarks" data-l10n-id="custom-look-bookmarks"/>
+    <menulist id="customLookBookmarks" data-custom-pref="browser.toolbars.bookmarks.visibility" data-custom-type="string">
+      <menupopup>
+        <menuitem data-l10n-id="custom-look-bookmarks-always" value="always"/>
+        <menuitem data-l10n-id="custom-look-bookmarks-newtab" value="newtab"/>
+        <menuitem data-l10n-id="custom-look-bookmarks-never" value="never"/>
+      </menupopup>
+    </menulist>
+  </hbox>
+  <checkbox id="customLookAddressBottom" data-l10n-id="custom-look-address-bottom"
+            data-custom-pref="custom.look.address-bar-bottom" data-custom-type="bool"/>
+  <checkbox id="customLookLabels" data-l10n-id="custom-look-labels"
+            data-custom-pref="custom.look.button-labels" data-custom-type="bool"/>
+  <checkbox id="customLookWindowButtons" data-l10n-id="custom-look-window-buttons"
+            data-custom-pref="zen.view.hide-window-controls" data-custom-type="bool" data-custom-inverted="true"/>
+
+  <label><html:h2 data-l10n-id="custom-search-header"/></label>
+  <description class="description-deemphasized" data-l10n-id="custom-search-description"/>
+  <hbox align="center">
+    <label style="min-width: 9em;" control="customSearchEngine" data-l10n-id="custom-search-engine"/>
+    <menulist id="customSearchEngine" sizetopopup="none" style="min-width: 12em;">
+      <menupopup id="customSearchEnginePopup"/>
+    </menulist>
+  </hbox>
+
+  <label><html:h2 data-l10n-id="custom-tabstyle-header"/></label>
+  <description class="description-deemphasized" data-l10n-id="custom-tabstyle-description"/>
+  <hbox align="center">
+    <label style="min-width: 9em;" control="customTabHeight" data-l10n-id="custom-tabstyle-height"/>
+    <menulist id="customTabHeight" data-custom-pref="custom.tabs.style.height" data-custom-type="int">
+      <menupopup>
+        <menuitem data-l10n-id="custom-option-default" value="0"/>
+        <menuitem data-l10n-id="custom-tabstyle-height-small" value="1"/>
+        <menuitem data-l10n-id="custom-tabstyle-height-medium" value="2"/>
+        <menuitem data-l10n-id="custom-tabstyle-height-large" value="3"/>
+      </menupopup>
+    </menulist>
+  </hbox>
+  <hbox align="center">
+    <label style="min-width: 9em;" control="customTabShape" data-l10n-id="custom-tabstyle-shape"/>
+    <menulist id="customTabShape" data-custom-pref="custom.tabs.style.shape" data-custom-type="int">
+      <menupopup>
+        <menuitem data-l10n-id="custom-tabstyle-shape-rounded" value="0"/>
+        <menuitem data-l10n-id="custom-tabstyle-shape-square" value="1"/>
+        <menuitem data-l10n-id="custom-tabstyle-shape-pill" value="2"/>
+      </menupopup>
+    </menulist>
+  </hbox>
+  <hbox align="center">
+    <label style="min-width: 9em;" control="customTabClose" data-l10n-id="custom-tabstyle-close"/>
+    <menulist id="customTabClose" data-custom-pref="custom.tabs.style.close" data-custom-type="int">
+      <menupopup>
+        <menuitem data-l10n-id="custom-tabstyle-close-hover" value="0"/>
+        <menuitem data-l10n-id="custom-tabstyle-close-always" value="1"/>
+        <menuitem data-l10n-id="custom-tabstyle-close-never" value="2"/>
+      </menupopup>
+    </menulist>
+  </hbox>
+  <checkbox id="customTabFaviconOnly" data-l10n-id="custom-tabstyle-favicon-only"
+            data-custom-pref="custom.tabs.style.favicon-only" data-custom-type="bool"/>
+
+  <label><html:h2 data-l10n-id="custom-text-header"/></label>
+  <description class="description-deemphasized" data-l10n-id="custom-text-description"/>
+  <hbox align="center">
+    <label style="min-width: 9em;" control="customLookFont" data-l10n-id="custom-text-font"/>
+    <menulist id="customLookFont" sizetopopup="none" style="max-width: 20em;">
+      <menupopup id="customLookFontPopup">
+        <menuitem data-l10n-id="custom-option-default" value=""/>
+      </menupopup>
+    </menulist>
+  </hbox>
+  <hbox align="center">
+    <label style="min-width: 9em;" control="customLookFontSize" data-l10n-id="custom-text-size"/>
+    <menulist id="customLookFontSize" data-custom-pref="custom.look.ui-font-size" data-custom-type="int">
+      <menupopup>
+        <menuitem data-l10n-id="custom-option-default" value="0"/>
+        <menuitem label="12" value="12"/>
+        <menuitem label="13" value="13"/>
+        <menuitem label="14" value="14"/>
+        <menuitem label="15" value="15"/>
+        <menuitem label="16" value="16"/>
+        <menuitem label="18" value="18"/>
+        <menuitem label="20" value="20"/>
+      </menupopup>
+    </menulist>
+  </hbox>
+
+  <label><html:h2 data-l10n-id="custom-window-header"/></label>
+  <description class="description-deemphasized" data-l10n-id="custom-window-description"/>
+  <hbox align="center">
+    <label style="min-width: 9em;" control="customLookSeeThrough" data-l10n-id="custom-window-see-through"/>
+    <menulist id="customLookSeeThrough" data-custom-pref="custom.look.see-through" data-custom-type="int">
+      <menupopup>
+        <menuitem data-l10n-id="custom-window-see-through-off" value="0"/>
+        <menuitem data-l10n-id="custom-window-see-through-light" value="25"/>
+        <menuitem data-l10n-id="custom-window-see-through-medium" value="50"/>
+        <menuitem data-l10n-id="custom-window-see-through-strong" value="75"/>
+      </menupopup>
+    </menulist>
+  </hbox>
+  <checkbox id="customLookSchedule" data-l10n-id="custom-window-schedule"
+            data-custom-pref="custom.look.schedule" data-custom-type="bool"/>
+  <hbox align="center" id="customLookScheduleTimes">
+    <label control="customLookDarkFrom" data-l10n-id="custom-window-dark-from"/>
+    <html:input id="customLookDarkFrom" type="time"/>
+    <label control="customLookLightFrom" data-l10n-id="custom-window-light-from"/>
+    <html:input id="customLookLightFrom" type="time"/>
+  </hbox>
+
+  <label><html:h2 data-l10n-id="custom-personalize-name-header"/></label>
+  <description class="description-deemphasized" data-l10n-id="custom-personalize-name-description"/>
+  <hbox align="center">
+    <html:input id="customPersonalizeName" type="text" maxlength="40"
+                data-l10n-id="custom-personalize-name-input"/>
+    <button id="customPersonalizeNameReset" data-l10n-id="custom-personalize-reset"/>
+  </hbox>
+
+  <label><html:h2 data-l10n-id="custom-personalize-icon-header"/></label>
+  <description class="description-deemphasized" data-l10n-id="custom-personalize-icon-description"/>
+  <hbox align="center">
+    <html:img id="customPersonalizeIconPreview" width="32" height="32" alt=""/>
+    <button id="customPersonalizeIconChoose" data-l10n-id="custom-personalize-choose-image"/>
+    <button id="customPersonalizeIconReset" data-l10n-id="custom-personalize-use-default"/>
+  </hbox>
+
+  <label><html:h2 data-l10n-id="custom-personalize-background-header"/></label>
+  <description class="description-deemphasized" data-l10n-id="custom-personalize-background-description"/>
+  <hbox align="center">
+    <html:img id="customPersonalizeBackgroundPreview" width="96" height="54" alt="" hidden="true"/>
+    <button id="customPersonalizeBackgroundChoose" data-l10n-id="custom-personalize-choose-image"/>
+    <button id="customPersonalizeBackgroundReset" data-l10n-id="custom-personalize-remove-image"/>
+  </hbox>
+  <hbox align="center">
+    <label id="customPersonalizeStrengthLabel" control="customPersonalizeStrength"
+           data-l10n-id="custom-personalize-background-strength"/>
+    <menulist id="customPersonalizeStrength" preference="custom.personalize.background-strength">
+      <menupopup>
+        <menuitem data-l10n-id="custom-personalize-strength-subtle" value="30"/>
+        <menuitem data-l10n-id="custom-personalize-strength-balanced" value="60"/>
+        <menuitem data-l10n-id="custom-personalize-strength-strong" value="90"/>
+      </menupopup>
+    </menulist>
+  </hbox>
+
+  <label><html:h2 data-l10n-id="custom-personalize-colors-header"/></label>
+  <description class="description-deemphasized" data-l10n-id="custom-personalize-colors-description"/>
+  <hbox align="center">
+    <label id="customPersonalizeAccentLabel" control="customPersonalizeAccent"
+           data-l10n-id="custom-personalize-accent-label"/>
+    <html:input id="customPersonalizeAccent" type="color"/>
+    <button id="customPersonalizeAccentReset" data-l10n-id="custom-personalize-accent-system"/>
+  </hbox>
+  <vbox id="customPersonalizeSwatchesBox" hidden="true">
+    <description class="description-deemphasized" data-l10n-id="custom-personalize-swatches"/>
+    <html:div id="customPersonalizeSwatches"/>
+  </vbox>
+
+  <label><html:h2 data-l10n-id="custom-looks-header"/></label>
+  <description class="description-deemphasized" data-l10n-id="custom-looks-description"/>
+  <hbox align="center">
+    <menulist id="customLooksList" sizetopopup="none" style="min-width: 12em;">
+      <menupopup id="customLooksPopup"/>
+    </menulist>
+    <button id="customLooksApply" data-l10n-id="custom-looks-apply"/>
+    <button id="customLooksDelete" data-l10n-id="custom-looks-delete"/>
+  </hbox>
+  <hbox align="center">
+    <html:input id="customLooksName" type="text" maxlength="40" data-l10n-id="custom-looks-name"/>
+    <button id="customLooksSave" data-l10n-id="custom-looks-save"/>
+  </hbox>
+  <hbox align="center">
+    <button id="customLooksExport" data-l10n-id="custom-looks-export"/>
+    <button id="customLooksImport" data-l10n-id="custom-looks-import"/>
+    <button id="customLooksCopyCode" data-l10n-id="custom-looks-copy-code"/>
+  </hbox>
+  <hbox align="center">
+    <html:input id="customLooksCode" type="text" data-l10n-id="custom-looks-code"/>
+    <button id="customLooksUseCode" data-l10n-id="custom-looks-use-code"/>
+  </hbox>
+  <hbox align="center">
+    <button id="customLooksUndo" data-l10n-id="custom-looks-undo"/>
+    <button id="customLooksResetLayout" data-l10n-id="custom-looks-reset-layout"/>
+    <button id="customLooksResetColors" data-l10n-id="custom-looks-reset-colors"/>
+    <button id="customLooksResetAll" data-l10n-id="custom-looks-reset-all"/>
+  </hbox>
+  <hbox align="center">
+    <button id="customSettingsExport" data-l10n-id="custom-settings-export"/>
+    <button id="customSettingsImport" data-l10n-id="custom-settings-import"/>
+  </hbox>
+  <description id="customLooksStatus" class="description-deemphasized" hidden="true"/>
+
+  <description id="customPersonalizeError" class="description-deemphasized" hidden="true"/>
+</groupbox>

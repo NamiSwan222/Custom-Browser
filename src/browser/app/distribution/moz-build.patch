@@ -7,7 +7,7 @@ index b174449a09..2409d9e220 100644
          "distribution.ini",
      ]
 +
-+# Jessnix: extensions bundled with every build (uBlock Origin, Hebrew). Firefox installs
++# Custom Browser: extensions bundled with every build (uBlock Origin, Hebrew). Firefox installs
 +# what it finds in distribution/extensions into each new profile on first run.
 +FINAL_TARGET_FILES.distribution.extensions += [
 +    "extensions/he@dictionaries.addons.mozilla.org.xpi",

@@ -1,0 +1,18 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 NamiSwan222. See LICENSE-MIT. */
+
+/* A person's own background image behind the tabs and toolbars
+ * (CustomPersonalize.mjs sets the variables). It sits in Zen's grain layer:
+ * above the space's colour gradient, below everything else, and its strength
+ * setting lets the gradient show through. */
+:root[custom-background] .zen-browser-generic-background .zen-browser-grain {
+  display: block;
+
+  &::before {
+    background-image: var(--custom-background-image);
+    background-size: cover;
+    background-position: center;
+    opacity: var(--custom-background-opacity, 0.6);
+  }
+}
+

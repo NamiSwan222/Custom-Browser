@@ -733,8 +733,8 @@
   display: none !important;
 }
 
-/* Jessnix: the bookmark star stays, unless turned off (prefs/jessnix/daily.yaml). */
-@media not -moz-pref("jessnix.urlbar.show-bookmark-star") {
+/* Custom Browser: the bookmark star stays, unless turned off (prefs/custom/daily.yaml). */
+@media not -moz-pref("custom.urlbar.show-bookmark-star") {
   #star-button-box {
     display: none !important;
   }

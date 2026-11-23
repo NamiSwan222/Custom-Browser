@@ -17,7 +17,7 @@
 - name: browser.tabs.fadeOutExplicitlyUnloadedTabs
   value: true
 
-# Jessnix: bookmarks toolbar on every page; Zen had "never".
+# Custom Browser: bookmarks toolbar on every page; Zen had "never".
 - name: browser.toolbars.bookmarks.visibility
   value: "always"
 

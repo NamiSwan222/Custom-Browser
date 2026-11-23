@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 NamiSwan222. See LICENSE-MIT.
+
+# Updates from GitHub Releases (src/zen/custom/CustomUpdates.mjs): once a
+# day, the latest release of NamiSwan222/Custom-Browser (fixed in the code, not
+# a pref, so nothing can point it elsewhere) is compared with this browser.
+- name: custom.update.check
+  value: true
+# Seconds since 1970.
+- name: custom.update.last-check
+  value: 0
+- name: custom.update.skip-version
+  value: ""
+
+# The default search step (CustomUpdates.mjs) ran on this profile: version 2
+# makes Google the default. default-set is version 1's flag (DuckDuckGo), kept
+# so a profile from then is recognised.
+- name: custom.search.default-version
+  value: 0
+- name: custom.search.default-set
+  value: false

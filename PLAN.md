@@ -4,7 +4,7 @@ A fast, private browser for daily use, with features that are mine.
 
 Custom Browser is a **fork of [Zen Browser](https://github.com/zen-browser/desktop)**, which is built on Firefox. Zen already has vertical tabs, workspaces, split view and compact mode. Custom Browser adds its own name and look, LibreWolf-style privacy defaults, and its own features on top.
 
-Inside the code it is still called Jessnix (`jessnix.exe`, `scripts/jessnix.ps1`, `src/zen/jessnix/`, `prefs/jessnix/`, `jessnix.*` prefs); those names are paths and identifiers, not the product name.
+Inside the code it is still called Custom Browser (`custom-browser.exe`, `scripts/custom-browser.ps1`, `src/zen/custom/`, `prefs/custom/`, `custom.*` prefs); those names are paths and identifiers, not the product name.
 
 ---
 
@@ -12,12 +12,12 @@ Inside the code it is still called Jessnix (`jessnix.exe`, `scripts/jessnix.ps1`
 
 | Option | Verdict |
 |---|---|
-| **Fork of Zen (Firefox)** | **Chosen.** Firefox's whole interface (tab strip, toolbar, menus, sidebars) is HTML/JS/CSS, so changing it rebuilds in seconds (`scripts/jessnix.ps1 ui`) instead of a C++ compile. Zen's vertical tabs, spaces and split view come for free |
+| **Fork of Zen (Firefox)** | **Chosen.** Firefox's whole interface (tab strip, toolbar, menus, sidebars) is HTML/JS/CSS, so changing it rebuilds in seconds (`scripts/custom-browser.ps1 ui`) instead of a C++ compile. Zen's vertical tabs, spaces and split view come for free |
 | Patch set on ungoogled-chromium | Tried first (tag `chromium-archive`). The interface is C++: every UI change meant a compile, and patches break on every 4-week Chromium release |
 | Own project on plain Firefox (surfer) | Same build speed as the Zen fork, but vertical tabs, spaces and split view would all have to be built from scratch |
 | Ladybird / Servo / Electron | Too early for daily use, or not a real browser |
 
-How Zen is built: [surfer](https://github.com/zen-browser/surfer) downloads Firefox's source into `engine/`, applies the `.patch` files and copies the files under `src/`, then runs Firefox's build (`mach`). Where Custom Browser came from in Zen is recorded in [docs/jessnix/UPSTREAM.md](docs/jessnix/UPSTREAM.md).
+How Zen is built: [surfer](https://github.com/zen-browser/surfer) downloads Firefox's source into `engine/`, applies the `.patch` files and copies the files under `src/`, then runs Firefox's build (`mach`). Where Custom Browser came from in Zen is recorded in [docs/custom-browser/UPSTREAM.md](docs/custom-browser/UPSTREAM.md).
 
 ---
 
@@ -26,13 +26,13 @@ How Zen is built: [surfer](https://github.com/zen-browser/surfer) downloads Fire
 | Need | Detail |
 |---|---|
 | Windows 10/11 x64 | |
-| A path with no spaces | Firefox refuses to build otherwise (the repo is `D:\AIStuff\Jessnix-Browser`) |
+| A path with no spaces | Firefox refuses to build otherwise (the repo is `D:\AIStuff\Custom-Browser`) |
 | MozillaBuild | `C:\mozilla-build`, Mozilla's build shell and tools |
 | Git for Windows, Node.js 21+, Python 3, Rust | surfer and Firefox's build use them |
 | sccache, 7-Zip | build cache, packaging |
 | Disk | ~40 GB for Firefox source + build |
 
-Everything runs through `scripts/jessnix.ps1 <step>`, which sets up the environment and logs to `.logs/`.
+Everything runs through `scripts/custom-browser.ps1 <step>`, which sets up the environment and logs to `.logs/`.
 
 ---
 
@@ -47,8 +47,8 @@ Custom-Browser/
 ├── prefs/             default preferences (firefox/, zen/, privatefox/, fastfox/)
 ├── configs/           build config and branding (configs/branding/<brand>/)
 ├── branding/          Custom Browser's original icon files
-├── scripts/           jessnix.ps1 (Windows wrapper) + Zen's scripts
-├── docs/jessnix/      Custom Browser notes: upstream, features
+├── scripts/           custom-browser.ps1 (Windows wrapper) + Zen's scripts
+├── docs/custom-browser/      Custom Browser notes: upstream, features
 └── engine/            Firefox source, downloaded by `init` (not in git)
 ```
 
@@ -59,27 +59,27 @@ Custom-Browser/
 ### Phase 0: First build (goal: plain Zen, built on my machine)
 - [x] Install MozillaBuild, sccache, 7-Zip on PATH
 - [x] Import Zen 1.24.2b (Firefox 160)
-- [x] `scripts/jessnix.ps1 init`: download Firefox and prepare it
-- [x] `scripts/jessnix.ps1 build` (29.7 min first time), then `start`: the browser runs
+- [x] `scripts/custom-browser.ps1 init`: download Firefox and prepare it
+- [x] `scripts/custom-browser.ps1 build` (29.7 min first time), then `start`: the browser runs
 
 ### Phase 1: Rebrand (goal: it says Custom Browser everywhere)
-- [x] `surfer.json`: name, app ID and binary `jessnix.exe`, brand names, version 0.1.0, own GitHub repo
-- [x] Icons from `branding/` into `configs/branding/release/` (`scripts/jessnix_branding.py`). The source art is 256 px, so the large about-page logo is upscaled; a bigger original would sharpen it
+- [x] `surfer.json`: name, app ID and binary `custom-browser.exe`, brand names, version 0.1.0, own GitHub repo
+- [x] Icons from `branding/` into `configs/branding/release/` (`scripts/custom_branding.py`). The source art is 256 px, so the large about-page logo is upscaled; a bigger original would sharpen it
 - [x] **Updater off** (`--disable-updater`), so Zen's server can never replace Custom Browser with Zen
 - [x] About page, post-update notice and uninstall page link to the project's GitHub; Zen's donate and privacy-policy links removed
-- [x] Own profile name `jessnix` and vendor, so it never shares data with Zen or Firefox
+- [x] Own profile name `custom-browser` and vendor, so it never shares data with Zen or Firefox
 - [ ] ✋ Wordmark (the name drawn as an image) in the browser's own type: waits for the owner's `DESIGN.md`
 - [x] Remaining Zen services reviewed, both kept: the mods store only downloads `theme.json` of installed mods from `zen-browser.github.io` (every 20 days; nothing sent), and the store page at `zen-browser.app` can install mods only when opened. `share.zen-browser.app` is contacted only when the owner shares something. Zen's donate button in the Library footer removed
-- [x] Windows installer (`scripts/jessnix.ps1 package`): `dist/Custom-Browser-<version>-setup.exe`, with uBlock Origin inside. Not code-signed yet (SmartScreen warns)
+- [x] Windows installer (`scripts/custom-browser.ps1 package`): `dist/Custom-Browser-<version>-setup.exe`, with uBlock Origin inside. Not code-signed yet (SmartScreen warns)
 
 ### Phase 2: Privacy defaults (the LibreWolf + Brave layer)
-Zen already turns off Mozilla telemetry, studies and crash-report sending (`prefs/privatefox/`). Custom Browser adds, in `prefs/jessnix/privacy.yaml`:
+Zen already turns off Mozilla telemetry, studies and crash-report sending (`prefs/privatefox/`). Custom Browser adds, in `prefs/custom/privacy.yaml`:
 - [x] Enhanced Tracking Protection: strict; HTTPS-Only mode on
 - [x] Cookie banners answered with "reject"
 - [x] Tracking parameters stripped from links
 - [x] Fingerprinting protection (Firefox's, without the site breakage of full resistFingerprinting)
 - [x] WebRTC IP-leak protection, cross-site referrers trimmed to the origin
-- [x] Default search: Google, chosen once per profile (a profile still on the earlier DuckDuckGo default moves over once); picking another engine afterwards sticks, in Settings > Personalize > Search (`JessnixUpdates.mjs`, pref `jessnix.search.default-version`)
+- [x] Default search: Google, chosen once per profile (a profile still on the earlier DuckDuckGo default moves over once); picking another engine afterwards sticks, in Settings > Personalize > Search (`CustomUpdates.mjs`, pref `custom.search.default-version`)
 - [x] Clear on exit with a keep list: Firefox's own Settings > Privacy > "Delete cookies and site data when Custom Browser is closed" plus Manage Exceptions (allow) does exactly this; nothing extra built. Off by default, since logins stay remembered
 
 **Brave features, and where they come from in Custom Browser.** Crypto (Rewards, Wallet), the paid VPN, Leo AI and Brave News are left out on purpose.
@@ -99,10 +99,10 @@ Zen already turns off Mozilla telemetry, studies and crash-report sending (`pref
 
 ### Phase 3: Speed and daily-use basics
 - [x] **Bundled uBlock Origin 1.76.4** (`scripts/fetch_ublock.py` downloads the pinned, checksummed release; Firefox installs it into each new profile, then it updates itself)
-- [x] Logins remembered: password manager on, cookies kept between sessions (`prefs/jessnix/daily.yaml`)
+- [x] Logins remembered: password manager on, cookies kept between sessions (`prefs/custom/daily.yaml`)
 - [x] Bookmarks: the star in the address bar is back (Zen hid it) and the bookmarks bar shows on every page
-- [x] Release build (`scripts/jessnix.ps1 release`: Zen release settings, thin LTO; 31 min clean). Switching between dev and release clears the old build output (the wrapper does it)
-- [x] Faster dev builds: sccache used locally (Zen only turned it on in CI), no debug symbols and no test code in dev builds, `jessnix.ps1 cpp [dir]` for quick C++/Rust rebuilds, and `start` clears the profile's startup cache so `ui` changes show
+- [x] Release build (`scripts/custom-browser.ps1 release`: Zen release settings, thin LTO; 31 min clean). Switching between dev and release clears the old build output (the wrapper does it)
+- [x] Faster dev builds: sccache used locally (Zen only turned it on in CI), no debug symbols and no test code in dev builds, `custom-browser.ps1 cpp [dir]` for quick C++/Rust rebuilds, and `start` clears the profile's startup cache so `ui` changes show
 - [x] Hebrew language pack and spellcheck included (`scripts/fetch_hebrew.py`)
 - [x] Tab unloading on low memory (on by default, also set in `daily.yaml`); hardware video decode on (checked on an RTX 3080 in about:support)
 - [x] Import from Chrome/Edge (File > Import): finds both profiles; Edge offers passwords and history. Chrome 127+ encrypts passwords so only Chrome itself can read them: export them from Chrome as a CSV and import that file (Passwords page > ⋯ > Import from a file)
@@ -110,18 +110,18 @@ Zen already turns off Mozilla telemetry, studies and crash-report sending (`pref
 - [ ] ✋ Sync: the owner decides between Firefox Sync (Mozilla account, works today from the account menu) and turning it off
 
 ### Phase 4: Custom Browser features (what makes it mine)
-Each feature lives in `src/zen/jessnix/` (or its own folder) and gets a note in `docs/jessnix/`.
+Each feature lives in `src/zen/custom/` (or its own folder) and gets a note in `docs/custom-browser/`.
 
 | Feature | Status |
 |---|---|
 | Vertical tabs, spaces (Zen "workspaces") | Comes with Zen |
 | Split view | Comes with Zen |
 | Compact mode, mods/themes store | Comes with Zen |
-| **Personalize** (Settings > Look and Feel): each person sets the browser's name, window icon, a background image and the accent color (`src/zen/jessnix/`) | Built |
-| **Layout** (in Personalize): size (compact, comfortable, large), corners, light or dark, sidebar left or right, bookmarks bar, button names, always-visible window buttons (`jessnix-look.css`) | Built |
-| **App identity**: the Personalize name and icon also rename and re-icon the installed app's Desktop and Start menu shortcuts and taskbar button (`JessnixAppIdentity.mjs`). All-users shortcuts made by the installer need admin rights, so a per-user Start menu shortcut stands in front of them | Built |
-| **Tabs on top** as a choice (Personalize > Layout > Tabs): Chrome-style tab row above the address bar, new tabs on the right, the selected tab joined to the address row, window buttons in the tab row, the window dragged by the row's empty space, address bar results dropping down in place (`JessnixTopTabs.mjs`, `jessnix-top-tabs.css`). Zen's single toolbar, collapsed sidebar, floating address bar and compact mode are held off while it's on, and given back after | Built, stage 1 (drag to reorder tabs untested). Stages 2-3: Phase 6 |
-| **Browse Together**: browse with friends on a LAN or Radmin/Hamachi/Tailscale, browser to browser with no server. Host a room (found automatically, joined with a code, each guest accepted), shared tabs, follow the host, chat, pointers, Alt+click pings, scroll and video play/pause/seek in step, live tab view. Only page addresses travel, never cookies or logins (`JessnixTogether*.mjs`, `jessnix-together.css`) | Built; tested between two copies on one PC, not yet between two PCs. More: Phase 10 |
+| **Personalize** (Settings > Look and Feel): each person sets the browser's name, window icon, a background image and the accent color (`src/zen/custom/`) | Built |
+| **Layout** (in Personalize): size (compact, comfortable, large), corners, light or dark, sidebar left or right, bookmarks bar, button names, always-visible window buttons (`custom-look.css`) | Built |
+| **App identity**: the Personalize name and icon also rename and re-icon the installed app's Desktop and Start menu shortcuts and taskbar button (`CustomAppIdentity.mjs`). All-users shortcuts made by the installer need admin rights, so a per-user Start menu shortcut stands in front of them | Built |
+| **Tabs on top** as a choice (Personalize > Layout > Tabs): Chrome-style tab row above the address bar, new tabs on the right, the selected tab joined to the address row, window buttons in the tab row, the window dragged by the row's empty space, address bar results dropping down in place (`CustomTopTabs.mjs`, `custom-top-tabs.css`). Zen's single toolbar, collapsed sidebar, floating address bar and compact mode are held off while it's on, and given back after | Built, stage 1 (drag to reorder tabs untested). Stages 2-3: Phase 6 |
+| **Browse Together**: browse with friends on a LAN or Radmin/Hamachi/Tailscale, browser to browser with no server. Host a room (found automatically, joined with a code, each guest accepted), shared tabs, follow the host, chat, pointers, Alt+click pings, scroll and video play/pause/seek in step, live tab view. Only page addresses travel, never cookies or logins (`CustomTogether*.mjs`, `custom-together.css`) | Built; tested between two copies on one PC, not yet between two PCs. More: Phase 10 |
 | **Custom Browser new tab page**: clock, search, shortcut tiles, notes, arranged by the person, no network requests | Built (Phase 8) |
 | **Mascot theme**: purple, from the icon, light + dark | To build (Low); waits for the owner's DESIGN.md |
 | **Command palette** (Ctrl+K): tabs, history, bookmarks, settings, actions | Built (Phase 9) |
@@ -140,7 +140,7 @@ Each phase is usable on its own. ✋ marks what needs the owner (a test on real 
 - [x] Commit the tabs-on-top, Browse Together and build work on a branch (`custom-browser-features`)
 - [ ] ✋ Test Browse Together between two real PCs over Radmin: Windows Firewall prompt (allow on private **and** public networks; Radmin's adapter is often "public"), video in step (a guest may need to click a video once before synced play works). Tested between two copies on one PC, over the Radmin address
 - [ ] ✋ Test drag to reorder tabs in the tab row with a real mouse (automated drags can't finish a native drag)
-- [x] Installer for friends: `jessnix.ps1 release`, then `package`
+- [x] Installer for friends: `custom-browser.ps1 release`, then `package`
 - [x] `DESIGN.md`: a **draft** from the globe icon's colours, for the owner to rewrite (section 6 says the direction is the owner's)
 
 ### Phase 6: Finish tabs on top
@@ -149,7 +149,7 @@ Each phase is usable on its own. ✋ marks what needs the owner (a test on real 
 - [x] "Tabs on top" in the tab row's and the tabs' right-click menus
 
 ### Phase 7: Personalize 2.0 (the customization core)
-- [x] **Look presets:** save the whole look as "Work", "Gaming" and so on, switch in one click (`JessnixLooks.sys.mjs`, Settings > Personalize > Saved looks; also in the command palette)
+- [x] **Look presets:** save the whole look as "Work", "Gaming" and so on, switch in one click (`CustomLooks.sys.mjs`, Settings > Personalize > Saved looks; also in the command palette)
 - [x] **Share a look:** a `.cblook` file with the images inside, or a short `CB1-…` code without them
 - [x] **Accent from wallpaper:** the background image's main colours offered as accent swatches
 - [x] **Light/dark schedule:** by time of day (following Windows was already Zen's "auto")
@@ -161,11 +161,11 @@ Each phase is usable on its own. ✋ marks what needs the owner (a test on real 
 ### Phase 8: Make it yours per site and per space
 - [x] **Per-space look:** a background and a font for one space (the space's right-click menu); Zen already gives each space its own colours
 - [x] **Per-site styles:** Zen's Boosts already store per-site colours, dark mode, fonts, hidden page parts and custom CSS; the page's right-click menu now has "Dark mode for this site" and "Style this site…". Firefox remembers zoom per site
-- [x] **New tab page:** Custom Browser's own (`jessnix-newtab.html`): clock, search with the default engine, shortcut tiles, notes; Edit to drag widgets around and show or hide them; no network requests
+- [x] **New tab page:** Custom Browser's own (`custom-newtab.html`): clock, search with the default engine, shortcut tiles, notes; Edit to drag widgets around and show or hide them; no network requests
 - [x] **Address bar at the bottom** (Personalize > Layout); its results open upwards
 
 ### Phase 9: Power features
-- [x] **Command palette (Ctrl+K):** open tabs, bookmarks, history, settings pages, saved looks and actions (`JessnixPower.mjs`)
+- [x] **Command palette (Ctrl+K):** open tabs, bookmarks, history, settings pages, saved looks and actions (`CustomPower.mjs`)
 - [x] **Shortcut editor:** already Firefox/Zen's `about:keyboard` (Settings > Keyboard Shortcuts), in the palette
 - [x] **Game mode:** background tabs unloaded and paused, memory freed, compact mode on; off puts compact mode back
 - [x] **Throwaway tabs:** "Open link in a throwaway tab" and a palette action; each in its own temporary container, deleted with everything it stored when its last tab closes
@@ -179,11 +179,11 @@ Each phase is usable on its own. ✋ marks what needs the owner (a test on real 
 - [x] **Shared board:** the room's to-dos and links
 - [x] **Remember friends:** rejoin the last room, saved friends, "Keep the same room code" for hosts
 - [x] **Hand over control:** "Let drive": the driver's tab choice and scrolling lead the room
-- [x] Its texts are in `locales/en-US/browser/browser/jessnix-together.ftl`
+- [x] Its texts are in `locales/en-US/browser/browser/custom-together.ftl`
 
 ### Phase 11: Chrome extensions support
-Firefox already runs Chrome's extension format (WebExtensions, with the `chrome.*` names), so many Chrome extensions run once repackaged (`JessnixChromeExtensions.sys.mjs`, `JessnixChromeStore.mjs`).
-- [x] **Add from Chrome Web Store:** the store's own "Add to Chrome" button becomes "Add to Custom Browser" ("Remove from Custom Browser" once added), and the "Switch to Chrome" banner and popup are hidden (`JessnixChromeStoreChild.sys.mjs`); a bar takes over if Google changes the page so the button can't be found; downloads the `.crx` from Google's update service, unwraps it, then Firefox's own permission prompt
+Firefox already runs Chrome's extension format (WebExtensions, with the `chrome.*` names), so many Chrome extensions run once repackaged (`CustomChromeExtensions.sys.mjs`, `CustomChromeStore.mjs`).
+- [x] **Add from Chrome Web Store:** the store's own "Add to Chrome" button becomes "Add to Custom Browser" ("Remove from Custom Browser" once added), and the "Switch to Chrome" banner and popup are hidden (`CustomChromeStoreChild.sys.mjs`); a bar takes over if Google changes the page so the button can't be found; downloads the `.crx` from Google's update service, unwraps it, then Firefox's own permission prompt
 - [x] **Automatic conversion:** Firefox extension id, service worker as background scripts, side panel as a sidebar, keys and permissions Firefox doesn't know removed, marked "From the Chrome Web Store"
 - [x] **Missing Chrome APIs:** a compatibility script (sidePanel, offscreen, importScripts); the report lists what has no stand-in
 - [x] **Compatibility check** before installing: works / partly (which features don't) / won't; a few known-good extensions named
@@ -194,9 +194,9 @@ Firefox already runs Chrome's extension format (WebExtensions, with the `chrome.
 
 ### Phase 12: Shipping
 - [x] **Updates** from GitHub Releases: a daily check of this repo's releases (fixed in the code); a bar offers to download and run the installer (asking first), and runs it only if its SHA-256 matches GitHub's checksum
-- [ ] ✋ **Code signing:** `jessnix.ps1 package` signs the installer when `JESSNIX_SIGN_CERT` points at a code-signing certificate (.pfx); buying one is the owner's
+- [ ] ✋ **Code signing:** `custom-browser.ps1 package` signs the installer when `CUSTOM_SIGN_CERT` points at a code-signing certificate (.pfx); buying one is the owner's
 - [x] **Settings backup:** Settings > Personalize > "Back up all my settings" / "Restore settings": every setting, saved looks and images in one `.cbsettings` file. Live sync between PCs is later
-- [ ] ✋ **Linux build:** `scripts/jessnix.sh` (init, build, ui, cpp, release, package, start); needs a Linux machine (this PC has no WSL Linux installed) to run and test
+- [ ] ✋ **Linux build:** `scripts/custom-browser.sh` (init, build, ui, cpp, release, package, start); needs a Linux machine (this PC has no WSL Linux installed) to run and test
 - [ ] ✋ **Release automation:** `.github/workflows/release.yml` for a self-hosted Windows runner (release build, installer, optional signing, GitHub release); registering the runner on the owner's PC is the owner's
 
 ---
@@ -213,7 +213,7 @@ Every Custom Browser UI surface (new tab page, theme, panels, settings) goes thr
 ## 7. Keeping up with Zen and Firefox
 
 Firefox ships a new version every 4 weeks, with security fixes in between, and Zen follows within days. A daily-use browser has to follow:
-- Take each new Zen release with the steps in [docs/jessnix/UPSTREAM.md](docs/jessnix/UPSTREAM.md)
-- Keep Custom Browser changes in their own files where possible (`src/zen/jessnix/`, `prefs/jessnix/`), so Zen updates rarely conflict
+- Take each new Zen release with the steps in [docs/custom-browser/UPSTREAM.md](docs/custom-browser/UPSTREAM.md)
+- Keep Custom Browser changes in their own files where possible (`src/zen/custom/`, `prefs/custom/`), so Zen updates rarely conflict
 - Never ship more than one Firefox version behind: old engines mean known security holes
 - Changing a Zen `.patch` file: reset that one file in `engine/` first (`git -C engine checkout -- <file>`), then `import`, or the new patch won't apply over the old one

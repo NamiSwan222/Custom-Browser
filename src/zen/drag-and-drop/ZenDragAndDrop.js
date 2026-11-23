@@ -873,7 +873,7 @@
         Services.prefs.getIntPref(
           "browser.tabs.dragDrop.moveOverThresholdPercent"
         ) / 100;
-      // Jessnix: tabs in a row (tabs on top) split left/right instead.
+      // Custom Browser: tabs in a row (tabs on top) split left/right instead.
       if (!this._tabbrowserTabs.verticalMode) {
         return (event.clientX - rect.left) / rect.width <= threshold;
       }
@@ -881,7 +881,7 @@
     }
 
     /**
-     * Jessnix: stands the shared drop indicator up beside an element, for tabs
+     * Custom Browser: stands the shared drop indicator up beside an element, for tabs
      * in a row (tabs on top).
      *
      * @param {object} options
@@ -1745,7 +1745,7 @@
           !showIndicatorUnderNewTabButton && this._dropsBefore(event, rect);
         const indicatorStyle = gZenPinnedTabManager.dragIndicator.style;
         if (!this._tabbrowserTabs.verticalMode) {
-          // Jessnix: tabs in a row, so the line stands between two tabs.
+          // Custom Browser: tabs in a row, so the line stands between two tabs.
           const left = Math.round(dropBefore ? rect.left - 2 : rect.right + 1);
           if (indicatorStyle.left !== `${left}px`) {
             shouldPlayHapticFeedback = true;

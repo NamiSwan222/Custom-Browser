@@ -37,12 +37,12 @@ build/signing/private_key.p12
 
 bloat-dump.log
 
-# Jessnix build logs
+# Custom Browser build logs
 .logs/
 
 # Downloaded by scripts/fetch_ublock.py
 src/browser/app/distribution/extensions/*.xpi
 
-# Browser profiles used by scripts/jessnix.ps1 start (logins, history: never commit)
+# Browser profiles used by scripts/custom-browser.ps1 start (logins, history: never commit)
 .profiles/
 graphify-out/
